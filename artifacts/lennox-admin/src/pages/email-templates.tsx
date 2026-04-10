@@ -65,6 +65,8 @@ const templateTypeLabels: Record<string, string> = {
   series_update: "Actualización de Serie",
   promotional: "Promocional",
   re_engagement: "Re-engagement",
+  confirmation: "Confirmación",
+  unsubscribe: "Baja / Unsubscribe",
 };
 
 const templateSchema = z.object({
@@ -73,7 +75,7 @@ const templateSchema = z.object({
   bodyHtml: z.string().min(1, "El contenido HTML es requerido"),
   bodyText: z.string().optional().nullable(),
   language: z.string().min(1, "El idioma es requerido"),
-  templateType: z.enum(["welcome", "lead_magnet_delivery", "new_release", "series_update", "promotional", "re_engagement"]),
+  templateType: z.enum(["welcome", "lead_magnet_delivery", "new_release", "series_update", "promotional", "re_engagement", "confirmation", "unsubscribe"]),
   mailingListId: z.coerce.number().optional().nullable(),
   isActive: z.boolean().optional(),
 });

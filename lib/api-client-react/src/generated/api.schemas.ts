@@ -360,6 +360,8 @@ export const EmailTemplateTemplateType = {
   series_update: "series_update",
   promotional: "promotional",
   re_engagement: "re_engagement",
+  confirmation: "confirmation",
+  unsubscribe: "unsubscribe",
 } as const;
 
 export interface EmailTemplate {
@@ -387,6 +389,8 @@ export const CreateEmailTemplateBodyTemplateType = {
   series_update: "series_update",
   promotional: "promotional",
   re_engagement: "re_engagement",
+  confirmation: "confirmation",
+  unsubscribe: "unsubscribe",
 } as const;
 
 export interface CreateEmailTemplateBody {
@@ -410,6 +414,8 @@ export const UpdateEmailTemplateBodyTemplateType = {
   series_update: "series_update",
   promotional: "promotional",
   re_engagement: "re_engagement",
+  confirmation: "confirmation",
+  unsubscribe: "unsubscribe",
 } as const;
 
 export interface UpdateEmailTemplateBody {
@@ -656,6 +662,24 @@ export interface CaptureEmailResult {
   automationsTriggered: number;
 }
 
+export interface ConfirmationResult {
+  success: boolean;
+  message: string;
+  alreadyConfirmed: boolean;
+}
+
+export interface UnsubscribePageData {
+  email?: string;
+  listName?: string;
+  language?: string;
+  valid: boolean;
+}
+
+export interface UnsubscribeResult {
+  success: boolean;
+  message: string;
+}
+
 export type DashboardSummaryBooksByFunnelRole = {
   leadMagnet: number;
   trafficEntry: number;
@@ -767,6 +791,7 @@ export type SubscriberStatus =
   (typeof SubscriberStatus)[keyof typeof SubscriberStatus];
 
 export const SubscriberStatus = {
+  pending: "pending",
   active: "active",
   unsubscribed: "unsubscribed",
   bounced: "bounced",
@@ -839,6 +864,7 @@ export type UpdateSubscriberBodyStatus =
   (typeof UpdateSubscriberBodyStatus)[keyof typeof UpdateSubscriberBodyStatus];
 
 export const UpdateSubscriberBodyStatus = {
+  pending: "pending",
   active: "active",
   unsubscribed: "unsubscribed",
   bounced: "bounced",
@@ -984,6 +1010,7 @@ export type ListSubscribersStatus =
   (typeof ListSubscribersStatus)[keyof typeof ListSubscribersStatus];
 
 export const ListSubscribersStatus = {
+  pending: "pending",
   active: "active",
   unsubscribed: "unsubscribed",
   bounced: "bounced",
@@ -1031,6 +1058,8 @@ export const ListEmailTemplatesTemplateType = {
   series_update: "series_update",
   promotional: "promotional",
   re_engagement: "re_engagement",
+  confirmation: "confirmation",
+  unsubscribe: "unsubscribe",
 } as const;
 
 export type ListAutomationRulesParams = {

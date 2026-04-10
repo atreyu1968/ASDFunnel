@@ -16,4 +16,6 @@ export const UpdateEmailTemplateBodyTemplateType = {
   series_update: "series_update",
   promotional: "promotional",
   re_engagement: "re_engagement",
+  confirmation: "confirmation",
+  unsubscribe: "unsubscribe",
 } as const;

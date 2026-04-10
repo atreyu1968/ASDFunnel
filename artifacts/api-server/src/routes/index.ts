@@ -10,6 +10,7 @@ import landingPagesRouter from "./landing-pages";
 import emailTemplatesRouter from "./email-templates";
 import automationsRouter from "./automations";
 import captureRouter from "./capture";
+import confirmationRouter from "./confirmation";
 import settingsRouter from "./settings";
 
 const router: IRouter = Router();
@@ -25,6 +26,7 @@ router.use(landingPagesRouter);
 router.use(emailTemplatesRouter);
 router.use(automationsRouter);
 router.use(captureRouter);
+router.use(confirmationRouter);
 router.use(settingsRouter);
 
 export default router;

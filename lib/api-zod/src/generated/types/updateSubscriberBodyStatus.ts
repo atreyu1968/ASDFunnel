@@ -10,6 +10,7 @@ export type UpdateSubscriberBodyStatus =
   (typeof UpdateSubscriberBodyStatus)[keyof typeof UpdateSubscriberBodyStatus];
 
 export const UpdateSubscriberBodyStatus = {
+  pending: "pending",
   active: "active",
   unsubscribed: "unsubscribed",
   bounced: "bounced",

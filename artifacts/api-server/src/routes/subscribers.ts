@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, subscribersTable, mailingListsTable, authorsTable } from "@workspace/db";
+import { generateToken } from "./confirmation";
 import {
   CreateSubscriberBody,
   GetSubscriberParams,
@@ -76,6 +77,8 @@ router.post("/subscribers", async (req, res): Promise<void> => {
     const [subscriber] = await db.insert(subscribersTable).values({
       ...parsed.data,
       status: "active",
+      confirmationToken: generateToken(),
+      confirmedAt: new Date(),
     }).returning();
 
     res.status(201).json(ListSubscribersResponseItem.parse({
@@ -218,6 +221,8 @@ router.post("/subscribers/import", async (req, res): Promise<void> => {
         status: "active",
         mailingListId: parsed.data.mailingListId,
         tags: sub.tags ?? null,
+        confirmationToken: generateToken(),
+        confirmedAt: new Date(),
       });
       imported++;
     } catch {

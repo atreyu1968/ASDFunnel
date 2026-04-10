@@ -10,9 +10,11 @@ export const subscribersTable = pgTable("subscribers", {
   lastName: text("last_name"),
   language: text("language").notNull().default("es"),
   source: text("source").notNull().default("manual"),
-  status: text("status").notNull().default("active"),
+  status: text("status").notNull().default("pending"),
   mailingListId: integer("mailing_list_id").notNull().references(() => mailingListsTable.id, { onDelete: "cascade" }),
   tags: text("tags"),
+  confirmationToken: text("confirmation_token"),
+  confirmedAt: timestamp("confirmed_at"),
   subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
   unsubscribedAt: timestamp("unsubscribed_at"),
 });

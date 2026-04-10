@@ -468,7 +468,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [active, unsubscribed, bounced]
+            enum: [pending, active, unsubscribed, bounced]
         - name: source
           in: query
           required: false
@@ -707,7 +707,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+            enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement, confirmation, unsubscribe]
         - name: mailingListId
           in: query
           required: false
@@ -1013,6 +1013,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CaptureEmailResult"
+
+  # ── Email Confirmation & Unsubscribe ──
+  /confirm/{token}:
+    get:
+      operationId: confirmEmail
+      tags: [capture]
+      summary: Confirm email subscription (double opt-in)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Confirmation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmationResult"
+
+  /unsubscribe/{token}:
+    get:
+      operationId: getUnsubscribePage
+      tags: [capture]
+      summary: Show unsubscribe confirmation page
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unsubscribe page data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnsubscribePageData"
+
+    post:
+      operationId: processUnsubscribe
+      tags: [capture]
+      summary: Process unsubscribe request
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unsubscribe result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnsubscribeResult"
 
   # ── Email Settings ──
   /settings/email:
@@ -1630,7 +1687,7 @@ components:
           type: string
         templateType:
           type: string
-          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement, confirmation, unsubscribe]
         mailingListId:
           type: integer
           nullable: true
@@ -1663,7 +1720,7 @@ components:
           type: string
         templateType:
           type: string
-          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement, confirmation, unsubscribe]
         mailingListId:
           type: integer
           nullable: true
@@ -1687,7 +1744,7 @@ components:
           type: string
         templateType:
           type: string
-          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement, confirmation, unsubscribe]
         mailingListId:
           type: integer
           nullable: true
@@ -1952,6 +2009,39 @@ components:
         automationsTriggered:
           type: integer
       required: [success, message, alreadySubscribed, automationsTriggered]
+
+    ConfirmationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        alreadyConfirmed:
+          type: boolean
+      required: [success, message, alreadyConfirmed]
+
+    UnsubscribePageData:
+      type: object
+      properties:
+        email:
+          type: string
+        listName:
+          type: string
+        language:
+          type: string
+        valid:
+          type: boolean
+      required: [valid]
+
+    UnsubscribeResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success, message]
 
     # ── Dashboard ──
     DashboardSummary:
@@ -2225,7 +2315,7 @@ components:
           enum: [lead_magnet, landing_page, manual, import, capture]
         status:
           type: string
-          enum: [active, unsubscribed, bounced]
+          enum: [pending, active, unsubscribed, bounced]
         mailingListId:
           type: integer
         mailingListName:
@@ -2282,7 +2372,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, unsubscribed, bounced]
+          enum: [pending, active, unsubscribed, bounced]
         tags:
           type: string
           nullable: true

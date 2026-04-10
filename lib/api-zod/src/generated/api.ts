@@ -481,7 +481,7 @@ export const GetMailingListResponse = zod.object({
         "import",
         "capture",
       ]),
-      status: zod.enum(["active", "unsubscribed", "bounced"]),
+      status: zod.enum(["pending", "active", "unsubscribed", "bounced"]),
       mailingListId: zod.number(),
       mailingListName: zod.string(),
       authorPenName: zod.string(),
@@ -536,7 +536,7 @@ export const DeleteMailingListParams = zod.object({
  */
 export const ListSubscribersQueryParams = zod.object({
   mailingListId: zod.coerce.number().optional(),
-  status: zod.enum(["active", "unsubscribed", "bounced"]).optional(),
+  status: zod.enum(["pending", "active", "unsubscribed", "bounced"]).optional(),
   source: zod
     .enum(["lead_magnet", "landing_page", "manual", "import", "capture"])
     .optional(),
@@ -556,7 +556,7 @@ export const ListSubscribersResponseItem = zod.object({
     "import",
     "capture",
   ]),
-  status: zod.enum(["active", "unsubscribed", "bounced"]),
+  status: zod.enum(["pending", "active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
   authorPenName: zod.string(),
@@ -605,7 +605,7 @@ export const GetSubscriberResponse = zod.object({
     "import",
     "capture",
   ]),
-  status: zod.enum(["active", "unsubscribed", "bounced"]),
+  status: zod.enum(["pending", "active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
   authorPenName: zod.string(),
@@ -626,7 +626,7 @@ export const UpdateSubscriberBody = zod.object({
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
   language: zod.string().optional(),
-  status: zod.enum(["active", "unsubscribed", "bounced"]).optional(),
+  status: zod.enum(["pending", "active", "unsubscribed", "bounced"]).optional(),
   tags: zod.string().nullish(),
 });
 
@@ -643,7 +643,7 @@ export const UpdateSubscriberResponse = zod.object({
     "import",
     "capture",
   ]),
-  status: zod.enum(["active", "unsubscribed", "bounced"]),
+  status: zod.enum(["pending", "active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
   authorPenName: zod.string(),
@@ -822,6 +822,8 @@ export const ListEmailTemplatesQueryParams = zod.object({
       "series_update",
       "promotional",
       "re_engagement",
+      "confirmation",
+      "unsubscribe",
     ])
     .optional(),
   mailingListId: zod.coerce.number().optional(),
@@ -841,6 +843,8 @@ export const ListEmailTemplatesResponseItem = zod.object({
     "series_update",
     "promotional",
     "re_engagement",
+    "confirmation",
+    "unsubscribe",
   ]),
   mailingListId: zod.number().nullish(),
   mailingListName: zod.string().nullish(),
@@ -868,6 +872,8 @@ export const CreateEmailTemplateBody = zod.object({
     "series_update",
     "promotional",
     "re_engagement",
+    "confirmation",
+    "unsubscribe",
   ]),
   mailingListId: zod.number().nullish(),
   isActive: zod.boolean().optional(),
@@ -894,6 +900,8 @@ export const GetEmailTemplateResponse = zod.object({
     "series_update",
     "promotional",
     "re_engagement",
+    "confirmation",
+    "unsubscribe",
   ]),
   mailingListId: zod.number().nullish(),
   mailingListName: zod.string().nullish(),
@@ -923,6 +931,8 @@ export const UpdateEmailTemplateBody = zod.object({
       "series_update",
       "promotional",
       "re_engagement",
+      "confirmation",
+      "unsubscribe",
     ])
     .optional(),
   mailingListId: zod.number().nullish(),
@@ -943,6 +953,8 @@ export const UpdateEmailTemplateResponse = zod.object({
     "series_update",
     "promotional",
     "re_engagement",
+    "confirmation",
+    "unsubscribe",
   ]),
   mailingListId: zod.number().nullish(),
   mailingListName: zod.string().nullish(),
@@ -1292,6 +1304,45 @@ export const CaptureByLandingPageResponse = zod.object({
 });
 
 /**
+ * @summary Confirm email subscription (double opt-in)
+ */
+export const ConfirmEmailParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const ConfirmEmailResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  alreadyConfirmed: zod.boolean(),
+});
+
+/**
+ * @summary Show unsubscribe confirmation page
+ */
+export const GetUnsubscribePageParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetUnsubscribePageResponse = zod.object({
+  email: zod.string().optional(),
+  listName: zod.string().optional(),
+  language: zod.string().optional(),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Process unsubscribe request
+ */
+export const ProcessUnsubscribeParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const ProcessUnsubscribeResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
  * @summary Get email provider configuration
  */
 export const GetEmailSettingsResponse = zod.object({
@@ -1381,7 +1432,7 @@ export const GetSubscriberStatsResponse = zod.object({
         "import",
         "capture",
       ]),
-      status: zod.enum(["active", "unsubscribed", "bounced"]),
+      status: zod.enum(["pending", "active", "unsubscribed", "bounced"]),
       mailingListId: zod.number(),
       mailingListName: zod.string(),
       authorPenName: zod.string(),

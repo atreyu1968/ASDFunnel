@@ -1,85 +1,41 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, subscribersTable, mailingListsTable, authorsTable, landingPagesTable, automationRulesTable, automationLogsTable, emailTemplatesTable } from "@workspace/db";
+import { db, subscribersTable, mailingListsTable, landingPagesTable, emailTemplatesTable } from "@workspace/db";
 import {
   CaptureEmailBody,
   CaptureByLandingPageBody,
   CaptureByLandingPageParams,
 } from "@workspace/api-zod";
+import { isEmailConfigured, sendTemplateEmail } from "../lib/email-service";
+import { generateToken } from "./confirmation";
 
 const router: IRouter = Router();
 
-async function processAutomations(subscriberId: number, mailingListId: number, email: string): Promise<number> {
-  let triggered = 0;
+async function sendConfirmationEmail(subscriberId: number, email: string, language: string, token: string, mailingListId: number): Promise<void> {
+  const emailReady = await isEmailConfigured();
+  if (!emailReady) return;
 
-  const rules = await db
+  const [confirmTemplate] = await db
     .select()
-    .from(automationRulesTable)
+    .from(emailTemplatesTable)
     .where(and(
-      eq(automationRulesTable.triggerType, "new_subscriber"),
-      eq(automationRulesTable.isActive, true),
+      eq(emailTemplatesTable.templateType, "confirmation"),
+      eq(emailTemplatesTable.language, language),
+      eq(emailTemplatesTable.isActive, true),
     ));
 
-  for (const rule of rules) {
-    if (rule.mailingListId && rule.mailingListId !== mailingListId) continue;
+  if (confirmTemplate) {
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "https://tudominio.com";
 
-    try {
-      let actionDetail = "";
-
-      if (rule.actionType === "assign_tag" && rule.actionConfig) {
-        const tag = (rule.actionConfig as any).tag || "new";
-        const [sub] = await db.select({ tags: subscribersTable.tags }).from(subscribersTable).where(eq(subscribersTable.id, subscriberId));
-        const currentTags = sub?.tags ? sub.tags.split(",").map((t: string) => t.trim()) : [];
-        if (!currentTags.includes(tag)) {
-          currentTags.push(tag);
-          await db.update(subscribersTable).set({ tags: currentTags.join(", ") }).where(eq(subscribersTable.id, subscriberId));
-        }
-        actionDetail = `Tag "${tag}" auto-assigned to ${email}`;
-      } else if ((rule.actionType === "send_email" || rule.actionType === "welcome_sequence" || rule.actionType === "send_lead_magnet") && rule.emailTemplateId) {
-        const emailReady = await isEmailConfigured();
-        if (emailReady) {
-          const result = await sendTemplateEmail(rule.emailTemplateId, email, { email, subscriber_email: email });
-          if (result.success) {
-            actionDetail = `Email enviado a ${email} (template #${rule.emailTemplateId})`;
-          } else {
-            actionDetail = `Error enviando email a ${email}: ${result.error}`;
-          }
-        } else {
-          actionDetail = `Email pendiente para ${email} — Resend no configurado`;
-        }
-      } else if (rule.actionType === "send_email" || rule.actionType === "welcome_sequence") {
-        actionDetail = `Email pendiente para ${email} — sin plantilla asignada`;
-      } else if (rule.actionType === "send_lead_magnet") {
-        actionDetail = `Lead magnet pendiente para ${email} — sin plantilla asignada`;
-      } else {
-        actionDetail = `Acción "${rule.actionType}" ejecutada para ${email}`;
-      }
-
-      await db.insert(automationLogsTable).values({
-        ruleId: rule.id,
-        subscriberId,
-        status: "success",
-        action: actionDetail,
-        details: { trigger: "capture", email, mailingListId },
-      });
-
-      await db.update(automationRulesTable).set({
-        executionCount: sql`${automationRulesTable.executionCount} + 1`,
-        lastExecutedAt: new Date(),
-      }).where(eq(automationRulesTable.id, rule.id));
-
-      triggered++;
-    } catch {
-      await db.insert(automationLogsTable).values({
-        ruleId: rule.id,
-        subscriberId,
-        status: "failed",
-        action: `Failed to execute ${rule.actionType} for ${email}`,
-      });
-    }
+    await sendTemplateEmail(confirmTemplate.id, email, {
+      email,
+      subscriber_email: email,
+      confirmation_url: `${baseUrl}/api/confirm/${token}`,
+      unsubscribe_url: `${baseUrl}/api/unsubscribe/${token}`,
+    });
   }
-
-  return triggered;
 }
 
 router.post("/capture", async (req, res): Promise<void> => {
@@ -100,7 +56,7 @@ router.post("/capture", async (req, res): Promise<void> => {
   }
 
   const [existing] = await db
-    .select({ id: subscribersTable.id })
+    .select({ id: subscribersTable.id, status: subscribersTable.status })
     .from(subscribersTable)
     .where(and(
       eq(subscribersTable.email, parsed.data.email),
@@ -108,9 +64,11 @@ router.post("/capture", async (req, res): Promise<void> => {
     ));
 
   if (existing) {
-    res.json({ success: true, message: "Ya estas suscrito a esta lista", subscriberId: existing.id, alreadySubscribed: true, automationsTriggered: 0 });
+    res.json({ success: true, message: "Ya estás suscrito a esta lista", subscriberId: existing.id, alreadySubscribed: true, automationsTriggered: 0 });
     return;
   }
+
+  const token = generateToken();
 
   const [subscriber] = await db.insert(subscribersTable).values({
     email: parsed.data.email,
@@ -118,19 +76,20 @@ router.post("/capture", async (req, res): Promise<void> => {
     lastName: parsed.data.lastName ?? null,
     language: parsed.data.language,
     source: "capture",
-    status: "active",
+    status: "pending",
     mailingListId: parsed.data.mailingListId,
     tags: parsed.data.tags ?? null,
+    confirmationToken: token,
   }).returning();
 
-  const automationsTriggered = await processAutomations(subscriber.id, parsed.data.mailingListId, parsed.data.email);
+  await sendConfirmationEmail(subscriber.id, parsed.data.email, parsed.data.language, token, parsed.data.mailingListId);
 
   res.json({
     success: true,
-    message: "Suscripcion exitosa",
+    message: "Te hemos enviado un email de confirmación. Revisa tu bandeja de entrada.",
     subscriberId: subscriber.id,
     alreadySubscribed: false,
-    automationsTriggered,
+    automationsTriggered: 0,
   });
 });
 
@@ -171,9 +130,11 @@ router.post("/capture/by-landing-page/:landingPageId", async (req, res): Promise
     ));
 
   if (existing) {
-    res.json({ success: true, message: "Ya estas suscrito a esta lista", subscriberId: existing.id, alreadySubscribed: true, automationsTriggered: 0 });
+    res.json({ success: true, message: "Ya estás suscrito a esta lista", subscriberId: existing.id, alreadySubscribed: true, automationsTriggered: 0 });
     return;
   }
+
+  const token = generateToken();
 
   const [subscriber] = await db.insert(subscribersTable).values({
     email: parsed.data.email,
@@ -181,18 +142,19 @@ router.post("/capture/by-landing-page/:landingPageId", async (req, res): Promise
     lastName: parsed.data.lastName ?? null,
     language: landingPage.language,
     source: "capture",
-    status: "active",
+    status: "pending",
     mailingListId: landingPage.mailingListId,
+    confirmationToken: token,
   }).returning();
 
-  const automationsTriggered = await processAutomations(subscriber.id, landingPage.mailingListId, parsed.data.email);
+  await sendConfirmationEmail(subscriber.id, parsed.data.email, landingPage.language, token, landingPage.mailingListId);
 
   res.json({
     success: true,
-    message: "Suscripcion exitosa",
+    message: "Te hemos enviado un email de confirmación. Revisa tu bandeja de entrada.",
     subscriberId: subscriber.id,
     alreadySubscribed: false,
-    automationsTriggered,
+    automationsTriggered: 0,
   });
 });
 

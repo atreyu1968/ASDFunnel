@@ -85,7 +85,8 @@ const sourceLabels: Record<string, string> = {
   import: "Importación",
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendiente", variant: "outline" },
   active: { label: "Activo", variant: "default" },
   unsubscribed: { label: "Dado de baja", variant: "secondary" },
   bounced: { label: "Rebotado", variant: "destructive" },
@@ -405,6 +406,7 @@ export default function Subscribers() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="pending">Pendientes</SelectItem>
             <SelectItem value="active">Activos</SelectItem>
             <SelectItem value="unsubscribed">Dados de baja</SelectItem>
             <SelectItem value="bounced">Rebotados</SelectItem>

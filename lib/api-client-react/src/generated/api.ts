@@ -28,6 +28,7 @@ import type {
   CaptureByLandingPageBody,
   CaptureEmailBody,
   CaptureEmailResult,
+  ConfirmationResult,
   CreateAuthorBody,
   CreateAutomationRuleBody,
   CreateBookBody,
@@ -61,6 +62,8 @@ import type {
   SubscriberStats,
   TestEmailBody,
   TestEmailResult,
+  UnsubscribePageData,
+  UnsubscribeResult,
   UpdateAutomationRuleBody,
   UpdateBookBody,
   UpdateEmailSettingsBody,
@@ -4168,6 +4171,265 @@ export const useCaptureByLandingPage = <
   TContext
 > => {
   return useMutation(getCaptureByLandingPageMutationOptions(options));
+};
+
+/**
+ * @summary Confirm email subscription (double opt-in)
+ */
+export const getConfirmEmailUrl = (token: string) => {
+  return `/api/confirm/${token}`;
+};
+
+export const confirmEmail = async (
+  token: string,
+  options?: RequestInit,
+): Promise<ConfirmationResult> => {
+  return customFetch<ConfirmationResult>(getConfirmEmailUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getConfirmEmailQueryKey = (token: string) => {
+  return [`/api/confirm/${token}`] as const;
+};
+
+export const getConfirmEmailQueryOptions = <
+  TData = Awaited<ReturnType<typeof confirmEmail>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof confirmEmail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getConfirmEmailQueryKey(token);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof confirmEmail>>> = ({
+    signal,
+  }) => confirmEmail(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof confirmEmail>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ConfirmEmailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof confirmEmail>>
+>;
+export type ConfirmEmailQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Confirm email subscription (double opt-in)
+ */
+
+export function useConfirmEmail<
+  TData = Awaited<ReturnType<typeof confirmEmail>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof confirmEmail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getConfirmEmailQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Show unsubscribe confirmation page
+ */
+export const getGetUnsubscribePageUrl = (token: string) => {
+  return `/api/unsubscribe/${token}`;
+};
+
+export const getUnsubscribePage = async (
+  token: string,
+  options?: RequestInit,
+): Promise<UnsubscribePageData> => {
+  return customFetch<UnsubscribePageData>(getGetUnsubscribePageUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetUnsubscribePageQueryKey = (token: string) => {
+  return [`/api/unsubscribe/${token}`] as const;
+};
+
+export const getGetUnsubscribePageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUnsubscribePage>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUnsubscribePage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUnsubscribePageQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getUnsubscribePage>>
+  > = ({ signal }) => getUnsubscribePage(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUnsubscribePage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUnsubscribePageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUnsubscribePage>>
+>;
+export type GetUnsubscribePageQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Show unsubscribe confirmation page
+ */
+
+export function useGetUnsubscribePage<
+  TData = Awaited<ReturnType<typeof getUnsubscribePage>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUnsubscribePage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUnsubscribePageQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Process unsubscribe request
+ */
+export const getProcessUnsubscribeUrl = (token: string) => {
+  return `/api/unsubscribe/${token}`;
+};
+
+export const processUnsubscribe = async (
+  token: string,
+  options?: RequestInit,
+): Promise<UnsubscribeResult> => {
+  return customFetch<UnsubscribeResult>(getProcessUnsubscribeUrl(token), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getProcessUnsubscribeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof processUnsubscribe>>,
+    TError,
+    { token: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof processUnsubscribe>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationKey = ["processUnsubscribe"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof processUnsubscribe>>,
+    { token: string }
+  > = (props) => {
+    const { token } = props ?? {};
+
+    return processUnsubscribe(token, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ProcessUnsubscribeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof processUnsubscribe>>
+>;
+
+export type ProcessUnsubscribeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Process unsubscribe request
+ */
+export const useProcessUnsubscribe = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof processUnsubscribe>>,
+    TError,
+    { token: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof processUnsubscribe>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  return useMutation(getProcessUnsubscribeMutationOptions(options));
 };
 
 /**
