@@ -64,10 +64,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-8 max-w-7xl">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <div className="container mx-auto p-8 max-w-7xl flex-1">
           {children}
         </div>
+        <footer className="border-t border-border px-4 py-2 flex items-center justify-center gap-2 text-xs text-muted-foreground shrink-0">
+          <img src={`${import.meta.env.BASE_URL}asd-logo.png`} alt="ASD" className="h-4 w-auto" />
+          <span>&copy; {new Date().getFullYear()} Atreyu Servicios Digitales. Todos los derechos reservados.</span>
+        </footer>
       </main>
     </div>
   );
