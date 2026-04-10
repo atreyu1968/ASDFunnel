@@ -16,6 +16,7 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Email provider**: Resend (configured from admin panel UI, not env vars)
 - **UI Language**: Spanish throughout
 
 ## Architecture
@@ -32,6 +33,11 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **mailing_lists**: Email lists separated by author AND language, with lead magnet book links
 - **subscribers**: Email subscribers with source tracking (lead_magnet, landing_page, manual, import), status management
 - **activity**: Audit log of book-related actions
+- **landing_pages**: Multi-language landing pages with SEO metadata, linked to mailing lists
+- **email_templates**: Email templates (welcome, lead_magnet, newsletter) with HTML/text bodies per language
+- **automation_rules**: Trigger-based automation rules (new_subscriber → send_email, assign_tag, etc.)
+- **automation_logs**: Execution logs for automation rules
+- **email_settings**: Email provider configuration (Resend API key, from email/name, reply-to) — managed from admin UI
 
 ### Frontend Pages
 1. **Panel de Control** (`/`): Dashboard with stats, series progress, recent activity
@@ -42,6 +48,10 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 6. **Calendario** (`/calendar`): Rapid Release publication calendar
 7. **Listas de Correo** (`/mailing-lists`): Mailing list management with subscriber stats, language/author filtering
 8. **Suscriptores** (`/subscribers`): Subscriber table with search, filtering, status management
+9. **Landing Pages** (`/landing-pages`): Multi-language landing page management with SEO fields
+10. **Plantillas Email** (`/email-templates`): Email template editor with HTML/text, language and type filtering
+11. **Automatizaciones** (`/automations`): Automation rule builder with trigger/action config, execution logs
+12. **Configuración** (`/settings`): Resend email provider configuration (API key, sender info, test email)
 
 ### Sales Funnel Stages
 1. Lead Magnet (free precuela for email capture)

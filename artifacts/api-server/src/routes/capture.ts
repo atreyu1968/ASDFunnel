@@ -35,12 +35,24 @@ async function processAutomations(subscriberId: number, mailingListId: number, e
           await db.update(subscribersTable).set({ tags: currentTags.join(", ") }).where(eq(subscribersTable.id, subscriberId));
         }
         actionDetail = `Tag "${tag}" auto-assigned to ${email}`;
+      } else if ((rule.actionType === "send_email" || rule.actionType === "welcome_sequence" || rule.actionType === "send_lead_magnet") && rule.emailTemplateId) {
+        const emailReady = await isEmailConfigured();
+        if (emailReady) {
+          const result = await sendTemplateEmail(rule.emailTemplateId, email, { email, subscriber_email: email });
+          if (result.success) {
+            actionDetail = `Email enviado a ${email} (template #${rule.emailTemplateId})`;
+          } else {
+            actionDetail = `Error enviando email a ${email}: ${result.error}`;
+          }
+        } else {
+          actionDetail = `Email pendiente para ${email} — Resend no configurado`;
+        }
       } else if (rule.actionType === "send_email" || rule.actionType === "welcome_sequence") {
-        actionDetail = `Welcome email queued for ${email}`;
+        actionDetail = `Email pendiente para ${email} — sin plantilla asignada`;
       } else if (rule.actionType === "send_lead_magnet") {
-        actionDetail = `Lead magnet delivery queued for ${email}`;
+        actionDetail = `Lead magnet pendiente para ${email} — sin plantilla asignada`;
       } else {
-        actionDetail = `Action "${rule.actionType}" triggered for ${email}`;
+        actionDetail = `Acción "${rule.actionType}" ejecutada para ${email}`;
       }
 
       await db.insert(automationLogsTable).values({

@@ -8,3 +8,4 @@ export * from "./landing-pages";
 export * from "./email-templates";
 export * from "./automation-rules";
 export * from "./automation-logs";
+export * from "./email-settings";

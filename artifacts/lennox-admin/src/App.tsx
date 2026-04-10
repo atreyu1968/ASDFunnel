@@ -14,6 +14,7 @@ import Subscribers from "@/pages/subscribers";
 import LandingPages from "@/pages/landing-pages";
 import EmailTemplates from "@/pages/email-templates";
 import Automations from "@/pages/automations";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/landing-pages" component={LandingPages} />
         <Route path="/email-templates" component={EmailTemplates} />
         <Route path="/automations" component={Automations} />
+        <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </MainLayout>

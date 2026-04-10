@@ -1292,6 +1292,54 @@ export const CaptureByLandingPageResponse = zod.object({
 });
 
 /**
+ * @summary Get email provider configuration
+ */
+export const GetEmailSettingsResponse = zod.object({
+  id: zod.number(),
+  provider: zod.string(),
+  apiKey: zod.string().nullish(),
+  fromEmail: zod.string().nullish(),
+  fromName: zod.string().nullish(),
+  replyToEmail: zod.string().nullish(),
+  isConfigured: zod.boolean(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update email provider configuration
+ */
+export const UpdateEmailSettingsBody = zod.object({
+  provider: zod.string().optional(),
+  apiKey: zod.string().optional(),
+  fromEmail: zod.string().optional(),
+  fromName: zod.string().optional(),
+  replyToEmail: zod.string().optional(),
+});
+
+export const UpdateEmailSettingsResponse = zod.object({
+  id: zod.number(),
+  provider: zod.string(),
+  apiKey: zod.string().nullish(),
+  fromEmail: zod.string().nullish(),
+  fromName: zod.string().nullish(),
+  replyToEmail: zod.string().nullish(),
+  isConfigured: zod.boolean(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Send a test email to verify configuration
+ */
+export const TestEmailSettingsBody = zod.object({
+  toEmail: zod.string(),
+});
+
+export const TestEmailSettingsResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
  * @summary Get subscriber and mailing list statistics
  */
 export const GetSubscriberStatsResponse = zod.object({

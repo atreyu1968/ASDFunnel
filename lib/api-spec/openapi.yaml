@@ -30,6 +30,8 @@ tags:
     description: Automation rules and execution
   - name: capture
     description: Public email capture endpoints
+  - name: settings
+    description: Email provider configuration
 paths:
   /healthz:
     get:
@@ -1011,6 +1013,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CaptureEmailResult"
+
+  # ── Email Settings ──
+  /settings/email:
+    get:
+      operationId: getEmailSettings
+      tags: [settings]
+      summary: Get email provider configuration
+      responses:
+        "200":
+          description: Email settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailSettingsResponse"
+    put:
+      operationId: updateEmailSettings
+      tags: [settings]
+      summary: Update email provider configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmailSettingsBody"
+      responses:
+        "200":
+          description: Updated email settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailSettingsResponse"
+
+  /settings/email/test:
+    post:
+      operationId: testEmailSettings
+      tags: [settings]
+      summary: Send a test email to verify configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestEmailBody"
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestEmailResult"
 
   # ── Dashboard / Analytics ──
   /dashboard/subscriber-stats:
@@ -2334,3 +2386,58 @@ components:
                 type: integer
             required: [month, count]
       required: [totalSubscribers, activeSubscribers, unsubscribed, bounced, totalMailingLists, activeMailingLists, subscribersByLanguage, subscribersByAuthor, subscribersBySource, recentSubscribers, growthByMonth]
+
+    EmailSettingsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        provider:
+          type: string
+        apiKey:
+          type: string
+          nullable: true
+        fromEmail:
+          type: string
+          nullable: true
+        fromName:
+          type: string
+          nullable: true
+        replyToEmail:
+          type: string
+          nullable: true
+        isConfigured:
+          type: boolean
+        updatedAt:
+          type: string
+      required: [id, provider, isConfigured, updatedAt]
+
+    UpdateEmailSettingsBody:
+      type: object
+      properties:
+        provider:
+          type: string
+        apiKey:
+          type: string
+        fromEmail:
+          type: string
+        fromName:
+          type: string
+        replyToEmail:
+          type: string
+
+    TestEmailBody:
+      type: object
+      properties:
+        toEmail:
+          type: string
+      required: [toEmail]
+
+    TestEmailResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success, message]

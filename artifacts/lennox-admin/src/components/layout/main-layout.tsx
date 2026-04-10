@@ -11,6 +11,7 @@ import {
   Globe,
   FileCode,
   Zap,
+  Settings,
 } from "lucide-react";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/landing-pages", label: "Landing Pages", icon: Globe },
     { href: "/email-templates", label: "Plantillas Email", icon: FileCode },
     { href: "/automations", label: "Automatizaciones", icon: Zap },
+    { href: "/settings", label: "Configuración", icon: Settings },
   ];
 
   return (

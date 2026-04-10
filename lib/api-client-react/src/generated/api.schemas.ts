@@ -907,6 +907,34 @@ export interface SubscriberStats {
   growthByMonth: SubscriberStatsGrowthByMonthItem[];
 }
 
+export interface EmailSettingsResponse {
+  id: number;
+  provider: string;
+  apiKey?: string | null;
+  fromEmail?: string | null;
+  fromName?: string | null;
+  replyToEmail?: string | null;
+  isConfigured: boolean;
+  updatedAt: string;
+}
+
+export interface UpdateEmailSettingsBody {
+  provider?: string;
+  apiKey?: string;
+  fromEmail?: string;
+  fromName?: string;
+  replyToEmail?: string;
+}
+
+export interface TestEmailBody {
+  toEmail: string;
+}
+
+export interface TestEmailResult {
+  success: boolean;
+  message: string;
+}
+
 export type ListSeriesParams = {
   authorId?: number;
   language?: string;
