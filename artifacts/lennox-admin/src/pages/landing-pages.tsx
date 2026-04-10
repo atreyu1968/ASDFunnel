@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText } from "lucide-react";
+import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText, Eye, X } from "lucide-react";
 import type { LandingPage } from "@workspace/api-client-react";
 
 const landingPageSchema = z.object({
@@ -87,6 +87,7 @@ export default function LandingPages() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filterEntityType, setFilterEntityType] = useState<string>("all");
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
+  const [previewPage, setPreviewPage] = useState<LandingPage | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -528,6 +529,9 @@ export default function LandingPages() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => setPreviewPage(page)} title="Vista previa">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(page)}>
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -581,6 +585,170 @@ export default function LandingPages() {
           <p className="text-muted-foreground">No hay landing pages registradas.</p>
         </div>
       )}
+
+      {previewPage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-lg shadow-2xl">
+            <button
+              onClick={() => setPreviewPage(null)}
+              className="absolute top-3 right-3 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="overflow-y-auto max-h-[90vh]">
+              <LandingPagePreview page={previewPage} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LandingPagePreview({ page }: { page: LandingPage }) {
+  const entityTypeLabel: Record<string, string> = {
+    author: "Autor",
+    series: "Serie",
+    book: "Libro",
+  };
+
+  const ctaTexts: Record<string, { heading: string; sub: string; button: string }> = {
+    es: { heading: "Descarga tu thriller gratuito", sub: "Suscríbete y recibe tu copia digital al instante", button: "Quiero mi copia gratis" },
+    en: { heading: "Download your free thriller", sub: "Subscribe and get your digital copy instantly", button: "Get my free copy" },
+    fr: { heading: "Téléchargez votre thriller gratuit", sub: "Inscrivez-vous et recevez votre copie numérique", button: "Obtenir ma copie gratuite" },
+    de: { heading: "Laden Sie Ihren kostenlosen Thriller herunter", sub: "Abonnieren Sie und erhalten Sie sofort Ihre digitale Kopie", button: "Meine Gratiskopie erhalten" },
+    it: { heading: "Scarica il tuo thriller gratuito", sub: "Iscriviti e ricevi subito la tua copia digitale", button: "Voglio la mia copia gratis" },
+    pt: { heading: "Baixe o seu thriller gratuito", sub: "Inscreva-se e receba a sua cópia digital instantaneamente", button: "Quero a minha cópia grátis" },
+  };
+
+  const defaults = ctaTexts[page.language] || ctaTexts.es;
+  const heading = page.captureHeading || defaults.heading;
+  const subheading = page.captureSubheading || defaults.sub;
+  const buttonText = page.captureButtonText || defaults.button;
+
+  return (
+    <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", background: "#0d0d1a", color: "#e0e0e0", minHeight: "100%" }}>
+      <div style={{ background: "linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%)", padding: "60px 20px 40px" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 12, letterSpacing: 4, color: "#d4a574", marginBottom: 16, textTransform: "uppercase" }}>
+            {entityTypeLabel[page.entityType] || page.entityType}
+          </div>
+          <h1 style={{ fontSize: 42, fontWeight: "bold", color: "#ffffff", marginBottom: 12, lineHeight: 1.1 }}>
+            {page.title || page.entityName}
+          </h1>
+          {page.entityName && page.title && (
+            <div style={{ fontSize: 18, color: "#d4a574", marginBottom: 20 }}>
+              {page.entityName}
+            </div>
+          )}
+          {page.description && (
+            <p style={{ fontSize: 18, color: "#b0b0b0", lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
+              {page.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div style={{ background: "#12122a", padding: "50px 20px" }}>
+        <div style={{ maxWidth: 480, margin: "0 auto", background: "#1a1a2e", borderRadius: 12, padding: "40px 32px", border: "1px solid #2a2a4a", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <h2 style={{ fontSize: 24, fontWeight: "bold", color: "#d4a574", textAlign: "center", marginBottom: 8 }}>
+            {heading}
+          </h2>
+          <p style={{ fontSize: 14, color: "#888", textAlign: "center", marginBottom: 24 }}>
+            {subheading}
+          </p>
+
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="email"
+              placeholder="tu@email.com"
+              disabled
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                background: "#0d0d1a",
+                border: "1px solid #333",
+                borderRadius: 6,
+                color: "#666",
+                fontSize: 15,
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Nombre"
+              disabled
+              style={{
+                padding: "12px 14px",
+                background: "#0d0d1a",
+                border: "1px solid #333",
+                borderRadius: 6,
+                color: "#666",
+                fontSize: 14,
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Apellido"
+              disabled
+              style={{
+                padding: "12px 14px",
+                background: "#0d0d1a",
+                border: "1px solid #333",
+                borderRadius: 6,
+                color: "#666",
+                fontSize: 14,
+              }}
+            />
+          </div>
+
+          <button
+            disabled
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#d4a574",
+              color: "#1a1a2e",
+              border: "none",
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: "bold",
+              cursor: "default",
+              letterSpacing: 1,
+            }}
+          >
+            {buttonText.toUpperCase()}
+          </button>
+
+          <p style={{ fontSize: 11, color: "#555", textAlign: "center", marginTop: 16 }}>
+            {page.language === "es" ? "Tu información está segura. Sin spam, solo thrillers." :
+             page.language === "en" ? "Your information is safe. No spam, just thrillers." :
+             page.language === "fr" ? "Vos informations sont en sécurité. Pas de spam, que des thrillers." :
+             page.language === "de" ? "Ihre Daten sind sicher. Kein Spam, nur Thriller." :
+             page.language === "it" ? "I tuoi dati sono al sicuro. Niente spam, solo thriller." :
+             "As suas informações estão seguras. Sem spam, apenas thrillers."}
+          </p>
+        </div>
+      </div>
+
+      {page.mailingListName && (
+        <div style={{ background: "#0d0d1a", padding: "20px", borderTop: "1px solid #1a1a2e" }}>
+          <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#444" }}>
+              Lista: {page.mailingListName} • {page.language.toUpperCase()} • {page.isPublished ? "Publicada" : "Borrador"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: "#0a0a18", padding: "30px 20px", textAlign: "center", borderTop: "1px solid #1a1a2e" }}>
+        <div style={{ fontSize: 18, color: "#d4a574", fontWeight: "bold", marginBottom: 4 }}>Lennox Hale</div>
+        <div style={{ fontSize: 12, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>Psychological Thrillers</div>
+        <div style={{ fontSize: 11, color: "#333", marginTop: 16 }}>© {new Date().getFullYear()} Lennox Hale Publishing. All rights reserved.</div>
+      </div>
     </div>
   );
 }
