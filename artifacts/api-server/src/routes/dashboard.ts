@@ -92,6 +92,7 @@ router.get("/dashboard/publication-calendar", async (_req, res): Promise<void> =
       title: booksTable.title,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
+      language: booksTable.language,
       scheduledDate: booksTable.scheduledDate,
       publicationDate: booksTable.publicationDate,
       status: booksTable.status,
