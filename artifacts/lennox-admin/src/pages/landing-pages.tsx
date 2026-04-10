@@ -606,32 +606,91 @@ export default function LandingPages() {
 }
 
 function LandingPagePreview({ page }: { page: LandingPage }) {
-  const entityTypeLabel: Record<string, string> = {
-    author: "Autor",
-    series: "Serie",
-    book: "Libro",
+  const lang = page.language;
+
+  const i18n: Record<string, {
+    entityLabels: Record<string, string>;
+    cta: { heading: string; sub: string; button: string };
+    placeholders: { email: string; firstName: string; lastName: string };
+    privacy: string;
+    footer: { tagline: string; rights: string };
+    listLabel: string;
+    published: string;
+    draft: string;
+  }> = {
+    es: {
+      entityLabels: { author: "Autor", series: "Serie", book: "Libro" },
+      cta: { heading: "Descarga tu thriller gratuito", sub: "Suscríbete y recibe tu copia digital al instante", button: "Quiero mi copia gratis" },
+      placeholders: { email: "tu@email.com", firstName: "Nombre", lastName: "Apellido" },
+      privacy: "Tu información está segura. Sin spam, solo thrillers.",
+      footer: { tagline: "Thrillers Psicológicos", rights: "Todos los derechos reservados." },
+      listLabel: "Lista",
+      published: "Publicada",
+      draft: "Borrador",
+    },
+    en: {
+      entityLabels: { author: "Author", series: "Series", book: "Book" },
+      cta: { heading: "Download your free thriller", sub: "Subscribe and get your digital copy instantly", button: "Get my free copy" },
+      placeholders: { email: "you@email.com", firstName: "First Name", lastName: "Last Name" },
+      privacy: "Your information is safe. No spam, just thrillers.",
+      footer: { tagline: "Psychological Thrillers", rights: "All rights reserved." },
+      listLabel: "List",
+      published: "Published",
+      draft: "Draft",
+    },
+    fr: {
+      entityLabels: { author: "Auteur", series: "Série", book: "Livre" },
+      cta: { heading: "Téléchargez votre thriller gratuit", sub: "Inscrivez-vous et recevez votre copie numérique", button: "Obtenir ma copie gratuite" },
+      placeholders: { email: "vous@email.com", firstName: "Prénom", lastName: "Nom" },
+      privacy: "Vos informations sont en sécurité. Pas de spam, que des thrillers.",
+      footer: { tagline: "Thrillers Psychologiques", rights: "Tous droits réservés." },
+      listLabel: "Liste",
+      published: "Publiée",
+      draft: "Brouillon",
+    },
+    de: {
+      entityLabels: { author: "Autor", series: "Serie", book: "Buch" },
+      cta: { heading: "Laden Sie Ihren kostenlosen Thriller herunter", sub: "Abonnieren Sie und erhalten Sie sofort Ihre digitale Kopie", button: "Meine Gratiskopie erhalten" },
+      placeholders: { email: "du@email.com", firstName: "Vorname", lastName: "Nachname" },
+      privacy: "Ihre Daten sind sicher. Kein Spam, nur Thriller.",
+      footer: { tagline: "Psychothriller", rights: "Alle Rechte vorbehalten." },
+      listLabel: "Liste",
+      published: "Veröffentlicht",
+      draft: "Entwurf",
+    },
+    it: {
+      entityLabels: { author: "Autore", series: "Serie", book: "Libro" },
+      cta: { heading: "Scarica il tuo thriller gratuito", sub: "Iscriviti e ricevi subito la tua copia digitale", button: "Voglio la mia copia gratis" },
+      placeholders: { email: "tu@email.com", firstName: "Nome", lastName: "Cognome" },
+      privacy: "I tuoi dati sono al sicuro. Niente spam, solo thriller.",
+      footer: { tagline: "Thriller Psicologici", rights: "Tutti i diritti riservati." },
+      listLabel: "Lista",
+      published: "Pubblicata",
+      draft: "Bozza",
+    },
+    pt: {
+      entityLabels: { author: "Autor", series: "Série", book: "Livro" },
+      cta: { heading: "Baixe o seu thriller gratuito", sub: "Inscreva-se e receba a sua cópia digital instantaneamente", button: "Quero a minha cópia grátis" },
+      placeholders: { email: "voce@email.com", firstName: "Nome", lastName: "Sobrenome" },
+      privacy: "As suas informações estão seguras. Sem spam, apenas thrillers.",
+      footer: { tagline: "Thrillers Psicológicos", rights: "Todos os direitos reservados." },
+      listLabel: "Lista",
+      published: "Publicada",
+      draft: "Rascunho",
+    },
   };
 
-  const ctaTexts: Record<string, { heading: string; sub: string; button: string }> = {
-    es: { heading: "Descarga tu thriller gratuito", sub: "Suscríbete y recibe tu copia digital al instante", button: "Quiero mi copia gratis" },
-    en: { heading: "Download your free thriller", sub: "Subscribe and get your digital copy instantly", button: "Get my free copy" },
-    fr: { heading: "Téléchargez votre thriller gratuit", sub: "Inscrivez-vous et recevez votre copie numérique", button: "Obtenir ma copie gratuite" },
-    de: { heading: "Laden Sie Ihren kostenlosen Thriller herunter", sub: "Abonnieren Sie und erhalten Sie sofort Ihre digitale Kopie", button: "Meine Gratiskopie erhalten" },
-    it: { heading: "Scarica il tuo thriller gratuito", sub: "Iscriviti e ricevi subito la tua copia digitale", button: "Voglio la mia copia gratis" },
-    pt: { heading: "Baixe o seu thriller gratuito", sub: "Inscreva-se e receba a sua cópia digital instantaneamente", button: "Quero a minha cópia grátis" },
-  };
-
-  const defaults = ctaTexts[page.language] || ctaTexts.es;
-  const heading = page.captureHeading || defaults.heading;
-  const subheading = page.captureSubheading || defaults.sub;
-  const buttonText = page.captureButtonText || defaults.button;
+  const t = i18n[lang] || i18n.es;
+  const heading = page.captureHeading || t.cta.heading;
+  const subheading = page.captureSubheading || t.cta.sub;
+  const buttonText = page.captureButtonText || t.cta.button;
 
   return (
     <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", background: "#0d0d1a", color: "#e0e0e0", minHeight: "100%" }}>
       <div style={{ background: "linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%)", padding: "60px 20px 40px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: 12, letterSpacing: 4, color: "#d4a574", marginBottom: 16, textTransform: "uppercase" }}>
-            {entityTypeLabel[page.entityType] || page.entityType}
+            {t.entityLabels[page.entityType] || page.entityType}
           </div>
           <h1 style={{ fontSize: 42, fontWeight: "bold", color: "#ffffff", marginBottom: 12, lineHeight: 1.1 }}>
             {page.title || page.entityName}
@@ -661,7 +720,7 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
           <div style={{ marginBottom: 16 }}>
             <input
               type="email"
-              placeholder="tu@email.com"
+              placeholder={t.placeholders.email}
               disabled
               style={{
                 width: "100%",
@@ -679,7 +738,7 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
           <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <input
               type="text"
-              placeholder="Nombre"
+              placeholder={t.placeholders.firstName}
               disabled
               style={{
                 padding: "12px 14px",
@@ -692,7 +751,7 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
             />
             <input
               type="text"
-              placeholder="Apellido"
+              placeholder={t.placeholders.lastName}
               disabled
               style={{
                 padding: "12px 14px",
@@ -724,12 +783,7 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
           </button>
 
           <p style={{ fontSize: 11, color: "#555", textAlign: "center", marginTop: 16 }}>
-            {page.language === "es" ? "Tu información está segura. Sin spam, solo thrillers." :
-             page.language === "en" ? "Your information is safe. No spam, just thrillers." :
-             page.language === "fr" ? "Vos informations sont en sécurité. Pas de spam, que des thrillers." :
-             page.language === "de" ? "Ihre Daten sind sicher. Kein Spam, nur Thriller." :
-             page.language === "it" ? "I tuoi dati sono al sicuro. Niente spam, solo thriller." :
-             "As suas informações estão seguras. Sem spam, apenas thrillers."}
+            {t.privacy}
           </p>
         </div>
       </div>
@@ -738,7 +792,7 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
         <div style={{ background: "#0d0d1a", padding: "20px", borderTop: "1px solid #1a1a2e" }}>
           <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
             <div style={{ fontSize: 11, color: "#444" }}>
-              Lista: {page.mailingListName} • {page.language.toUpperCase()} • {page.isPublished ? "Publicada" : "Borrador"}
+              {t.listLabel}: {page.mailingListName} • {page.language.toUpperCase()} • {page.isPublished ? t.published : t.draft}
             </div>
           </div>
         </div>
@@ -746,8 +800,8 @@ function LandingPagePreview({ page }: { page: LandingPage }) {
 
       <div style={{ background: "#0a0a18", padding: "30px 20px", textAlign: "center", borderTop: "1px solid #1a1a2e" }}>
         <div style={{ fontSize: 18, color: "#d4a574", fontWeight: "bold", marginBottom: 4 }}>Lennox Hale</div>
-        <div style={{ fontSize: 12, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>Psychological Thrillers</div>
-        <div style={{ fontSize: 11, color: "#333", marginTop: 16 }}>© {new Date().getFullYear()} Lennox Hale Publishing. All rights reserved.</div>
+        <div style={{ fontSize: 12, color: "#555", letterSpacing: 2, textTransform: "uppercase" }}>{t.footer.tagline}</div>
+        <div style={{ fontSize: 11, color: "#333", marginTop: 16 }}>© {new Date().getFullYear()} Lennox Hale Publishing. {t.footer.rights}</div>
       </div>
     </div>
   );
