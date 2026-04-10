@@ -136,11 +136,100 @@ export default function LandingPages() {
   });
 
   const watchedEntityType = form.watch("entityType");
+  const watchedEntityId = form.watch("entityId");
+  const watchedLanguage = form.watch("language");
 
   const entityOptions = () => {
     if (watchedEntityType === "author") return authors?.map(a => ({ id: a.id, label: a.penName })) ?? [];
     if (watchedEntityType === "series") return series?.map(s => ({ id: s.id, label: s.name })) ?? [];
     if (watchedEntityType === "book") return books?.map(b => ({ id: b.id, label: b.title })) ?? [];
+    return [];
+  };
+
+  const slugify = (text: string) =>
+    text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const getAuthorDomain = (entityType: string, entityId: number): string | null => {
+    if (!authors?.length) return null;
+    if (entityType === "author") {
+      const author = authors.find(a => a.id === entityId);
+      return (author as any)?.domain || null;
+    }
+    if (entityType === "series") {
+      const s = series?.find(s => s.id === entityId);
+      if (!s) return null;
+      const author = authors.find(a => a.id === (s as any).authorId);
+      return (author as any)?.domain || null;
+    }
+    if (entityType === "book") {
+      const b = books?.find(b => b.id === entityId);
+      if (!b) return null;
+      const s = series?.find(s => s.id === (b as any).seriesId);
+      if (!s) return null;
+      const author = authors.find(a => a.id === (s as any).authorId);
+      return (author as any)?.domain || null;
+    }
+    return null;
+  };
+
+  const generateUrl = () => {
+    const etype = form.getValues("entityType");
+    const eid = Number(form.getValues("entityId"));
+    const lang = form.getValues("language");
+    if (!eid || !lang) return;
+
+    const domain = getAuthorDomain(etype, eid);
+    let entitySlug = "";
+    if (etype === "author") {
+      const a = authors?.find(a => a.id === eid);
+      entitySlug = a ? slugify(a.penName) : "";
+    } else if (etype === "series") {
+      const s = series?.find(s => s.id === eid);
+      entitySlug = s ? slugify(s.name) : "";
+    } else if (etype === "book") {
+      const b = books?.find(b => b.id === eid);
+      entitySlug = b ? slugify(b.title) : "";
+    }
+
+    if (domain) {
+      form.setValue("url", `https://${domain}/${lang}/${entitySlug}`);
+    } else {
+      form.setValue("url", `/${lang}/${entitySlug}`);
+    }
+  };
+
+  const getEntityName = (page: LandingPage) => {
+    if (page.entityType === "author") return authors?.find(a => a.id === page.entityId)?.penName || "";
+    if (page.entityType === "series") return series?.find(s => s.id === page.entityId)?.name || "";
+    if (page.entityType === "book") return books?.find(b => b.id === page.entityId)?.title || "";
+    return "";
+  };
+
+  const getParentLandingPage = (page: LandingPage): LandingPage | null => {
+    if (!landingPages) return null;
+    if (page.entityType === "book") {
+      const b = books?.find(b => b.id === page.entityId);
+      if (!b) return null;
+      return landingPages.find(lp => lp.entityType === "series" && lp.entityId === (b as any).seriesId && lp.language === page.language) || null;
+    }
+    if (page.entityType === "series") {
+      const s = series?.find(s => s.id === page.entityId);
+      if (!s) return null;
+      return landingPages.find(lp => lp.entityType === "author" && lp.entityId === (s as any).authorId && lp.language === page.language) || null;
+    }
+    return null;
+  };
+
+  const getChildLandingPages = (page: LandingPage): LandingPage[] => {
+    if (!landingPages) return [];
+    if (page.entityType === "author") {
+      const authorSeries = series?.filter(s => (s as any).authorId === page.entityId) || [];
+      return landingPages.filter(lp => lp.entityType === "series" && authorSeries.some(s => s.id === lp.entityId) && lp.language === page.language);
+    }
+    if (page.entityType === "series") {
+      const seriesBooks = books?.filter(b => (b as any).seriesId === page.entityId) || [];
+      return landingPages.filter(lp => lp.entityType === "book" && seriesBooks.some(b => b.id === lp.entityId) && lp.language === page.language);
+    }
     return [];
   };
 
@@ -345,9 +434,14 @@ export default function LandingPages() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>URL *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://tudominio.com/es/nombre-autor" {...field} />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="https://tudominio.com/es/nombre-autor" {...field} />
+                        </FormControl>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={generateUrl} title="Generar URL automática desde dominio del autor">
+                          <Globe className="h-4 w-4 mr-1" /> Auto
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -622,6 +716,33 @@ export default function LandingPages() {
                 {page.description && (
                   <p className="text-xs text-muted-foreground bg-muted p-2 rounded-md line-clamp-2">{page.description}</p>
                 )}
+                {(() => {
+                  const parent = getParentLandingPage(page);
+                  const children = getChildLandingPages(page);
+                  if (!parent && children.length === 0) return null;
+                  return (
+                    <div className="border-t border-border pt-2 mt-2 space-y-1">
+                      {parent && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="text-muted-foreground">↑</span>
+                          <span className="text-muted-foreground">{entityTypeLabels[parent.entityType]}:</span>
+                          <button onClick={() => setPreviewPage(parent)} className="text-primary hover:underline truncate">{getEntityName(parent)}</button>
+                        </div>
+                      )}
+                      {children.length > 0 && (
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">↓ {page.entityType === "author" ? "Series" : "Libros"}: </span>
+                          {children.map((c, i) => (
+                            <span key={c.id}>
+                              {i > 0 && ", "}
+                              <button onClick={() => setPreviewPage(c)} className="text-primary hover:underline">{getEntityName(c)}</button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <p className="text-xs text-muted-foreground">
                   Creada: {format(new Date(page.createdAt), "d MMM yyyy", { locale: es })}
                 </p>

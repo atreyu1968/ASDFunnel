@@ -59,6 +59,7 @@ const authorSchema = z.object({
   bio: z.string().optional().nullable(),
   genreFocus: z.string().optional().nullable(),
   brandDescription: z.string().optional().nullable(),
+  domain: z.string().optional().nullable(),
 });
 
 type AuthorFormValues = z.infer<typeof authorSchema>;
@@ -238,6 +239,19 @@ export default function Authors() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="domain"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dominio del Autor</FormLabel>
+                      <FormControl>
+                        <Input placeholder="lennoxhale.com" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={createAuthor.isPending || updateAuthor.isPending}>
                     {editingAuthorId ? "Guardar Cambios" : "Crear Autor"}
@@ -302,6 +316,12 @@ export default function Authors() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Real:</span>
                       <span className="font-medium">{author.realName}</span>
+                    </div>
+                  )}
+                  {(author as any).domain && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Dominio:</span>
+                      <span className="font-medium text-primary">{(author as any).domain}</span>
                     </div>
                   )}
                   <div className="flex flex-col mt-2">

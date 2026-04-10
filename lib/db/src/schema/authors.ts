@@ -9,6 +9,7 @@ export const authorsTable = pgTable("authors", {
   bio: text("bio"),
   genreFocus: text("genre_focus"),
   brandDescription: text("brand_description"),
+  domain: text("domain"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
