@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Lennox Hale Publishing Management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: authors
+    description: Author/pen name management
+  - name: series
+    description: Book series management
+  - name: books
+    description: Book management
+  - name: mailing-lists
+    description: Mailing list management (by author and language)
+  - name: subscribers
+    description: Email subscriber management
+  - name: dashboard
+    description: Dashboard and analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,619 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Authors ──
+  /authors:
+    get:
+      operationId: listAuthors
+      tags: [authors]
+      summary: List all authors
+      responses:
+        "200":
+          description: List of authors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Author"
+    post:
+      operationId: createAuthor
+      tags: [authors]
+      summary: Create a new author
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuthorBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+
+  /authors/{id}:
+    get:
+      operationId: getAuthor
+      tags: [authors]
+      summary: Get author by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Author details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+        "404":
+          description: Not found
+    put:
+      operationId: updateAuthor
+      tags: [authors]
+      summary: Update an author
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuthorBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+    delete:
+      operationId: deleteAuthor
+      tags: [authors]
+      summary: Delete an author
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Series ──
+  /series:
+    get:
+      operationId: listSeries
+      tags: [series]
+      summary: List all series
+      parameters:
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Series"
+    post:
+      operationId: createSeries
+      tags: [series]
+      summary: Create a new series
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSeriesBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Series"
+
+  /series/{id}:
+    get:
+      operationId: getSeries
+      tags: [series]
+      summary: Get series by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Series details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeriesWithBooks"
+        "404":
+          description: Not found
+    put:
+      operationId: updateSeries
+      tags: [series]
+      summary: Update a series
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSeriesBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Series"
+    delete:
+      operationId: deleteSeries
+      tags: [series]
+      summary: Delete a series
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Books ──
+  /books:
+    get:
+      operationId: listBooks
+      tags: [books]
+      summary: List all books
+      parameters:
+        - name: seriesId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [draft, production, ready, scheduled, published]
+        - name: funnelRole
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [lead_magnet, traffic_entry, core_offer, crossover_bridge]
+      responses:
+        "200":
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+    post:
+      operationId: createBook
+      tags: [books]
+      summary: Create a new book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+
+  /books/{id}:
+    get:
+      operationId: getBook
+      tags: [books]
+      summary: Get book by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "404":
+          description: Not found
+    put:
+      operationId: updateBook
+      tags: [books]
+      summary: Update a book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+    delete:
+      operationId: deleteBook
+      tags: [books]
+      summary: Delete a book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Mailing Lists ──
+  /mailing-lists:
+    get:
+      operationId: listMailingLists
+      tags: [mailing-lists]
+      summary: List all mailing lists
+      parameters:
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of mailing lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MailingList"
+    post:
+      operationId: createMailingList
+      tags: [mailing-lists]
+      summary: Create a new mailing list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMailingListBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailingList"
+
+  /mailing-lists/{id}:
+    get:
+      operationId: getMailingList
+      tags: [mailing-lists]
+      summary: Get mailing list by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mailing list details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailingListWithSubscribers"
+        "404":
+          description: Not found
+    put:
+      operationId: updateMailingList
+      tags: [mailing-lists]
+      summary: Update a mailing list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMailingListBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailingList"
+    delete:
+      operationId: deleteMailingList
+      tags: [mailing-lists]
+      summary: Delete a mailing list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Subscribers ──
+  /subscribers:
+    get:
+      operationId: listSubscribers
+      tags: [subscribers]
+      summary: List all subscribers
+      parameters:
+        - name: mailingListId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, unsubscribed, bounced]
+        - name: source
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [lead_magnet, landing_page, manual, import]
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of subscribers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscriber"
+    post:
+      operationId: createSubscriber
+      tags: [subscribers]
+      summary: Add a new subscriber
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriberBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriber"
+
+  /subscribers/{id}:
+    get:
+      operationId: getSubscriber
+      tags: [subscribers]
+      summary: Get subscriber by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscriber details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriber"
+        "404":
+          description: Not found
+    put:
+      operationId: updateSubscriber
+      tags: [subscribers]
+      summary: Update a subscriber
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriberBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriber"
+    delete:
+      operationId: deleteSubscriber
+      tags: [subscribers]
+      summary: Delete a subscriber
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /subscribers/import:
+    post:
+      operationId: importSubscribers
+      tags: [subscribers]
+      summary: Bulk import subscribers to a mailing list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportSubscribersBody"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportSubscribersResult"
+
+  /dashboard/subscriber-stats:
+    get:
+      operationId: getSubscriberStats
+      tags: [dashboard]
+      summary: Get subscriber and mailing list statistics
+      responses:
+        "200":
+          description: Subscriber statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriberStats"
+
+  # ── Dashboard / Analytics ──
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/publication-calendar:
+    get:
+      operationId: getPublicationCalendar
+      tags: [dashboard]
+      summary: Get publication calendar (upcoming releases)
+      responses:
+        "200":
+          description: Calendar entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEntry"
+
+  /dashboard/funnel-overview:
+    get:
+      operationId: getFunnelOverview
+      tags: [dashboard]
+      summary: Get funnel role breakdown
+      responses:
+        "200":
+          description: Funnel overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FunnelOverview"
+
+  /dashboard/series-progress:
+    get:
+      operationId: getSeriesProgress
+      tags: [dashboard]
+      summary: Get progress per series
+      responses:
+        "200":
+          description: Series progress list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeriesProgress"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent book activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +658,737 @@ components:
       required:
         - status
 
+    Author:
+      type: object
+      properties:
+        id:
+          type: integer
+        penName:
+          type: string
+        realName:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        genreFocus:
+          type: string
+          nullable: true
+        brandDescription:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, penName, createdAt]
+
+    CreateAuthorBody:
+      type: object
+      properties:
+        penName:
+          type: string
+        realName:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        genreFocus:
+          type: string
+          nullable: true
+        brandDescription:
+          type: string
+          nullable: true
+      required: [penName]
+
+    Series:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, planned, completed]
+        displayOrder:
+          type: integer
+        crossoverFromSeriesId:
+          type: integer
+          nullable: true
+        crossoverFromSeriesName:
+          type: string
+          nullable: true
+        authorPenName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        bookCount:
+          type: integer
+      required: [id, authorId, name, status, displayOrder, authorPenName, createdAt, bookCount]
+
+    SeriesWithBooks:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, planned, completed]
+        displayOrder:
+          type: integer
+        crossoverFromSeriesId:
+          type: integer
+          nullable: true
+        crossoverFromSeriesName:
+          type: string
+          nullable: true
+        authorPenName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+      required: [id, authorId, name, status, displayOrder, authorPenName, createdAt, books]
+
+    CreateSeriesBody:
+      type: object
+      properties:
+        authorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, planned, completed]
+        displayOrder:
+          type: integer
+        crossoverFromSeriesId:
+          type: integer
+          nullable: true
+      required: [authorId, name]
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        seriesId:
+          type: integer
+        bookNumber:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        wordCount:
+          type: integer
+          nullable: true
+        funnelRole:
+          type: string
+          enum: [lead_magnet, traffic_entry, core_offer, crossover_bridge]
+        pricingStrategy:
+          type: string
+          enum: [perma_free, promotional, full_price]
+        price:
+          type: number
+          nullable: true
+        promotionalPrice:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [draft, production, ready, scheduled, published]
+        publicationDate:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledDate:
+          type: string
+          format: date-time
+          nullable: true
+        distributionChannel:
+          type: string
+          enum: [kdp, email_exclusive, wide]
+          nullable: true
+        asin:
+          type: string
+          nullable: true
+        isbn:
+          type: string
+          nullable: true
+        crossoverToSeriesId:
+          type: integer
+          nullable: true
+        seriesName:
+          type: string
+        authorPenName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, seriesId, bookNumber, title, funnelRole, pricingStrategy, status, seriesName, authorPenName, createdAt]
+
+    CreateBookBody:
+      type: object
+      properties:
+        seriesId:
+          type: integer
+        bookNumber:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        wordCount:
+          type: integer
+          nullable: true
+        funnelRole:
+          type: string
+          enum: [lead_magnet, traffic_entry, core_offer, crossover_bridge]
+        pricingStrategy:
+          type: string
+          enum: [perma_free, promotional, full_price]
+        price:
+          type: number
+          nullable: true
+        promotionalPrice:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [draft, production, ready, scheduled, published]
+        publicationDate:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledDate:
+          type: string
+          format: date-time
+          nullable: true
+        distributionChannel:
+          type: string
+          enum: [kdp, email_exclusive, wide]
+          nullable: true
+        asin:
+          type: string
+          nullable: true
+        isbn:
+          type: string
+          nullable: true
+        crossoverToSeriesId:
+          type: integer
+          nullable: true
+      required: [seriesId, bookNumber, title, funnelRole, pricingStrategy, status]
+
+    UpdateBookBody:
+      type: object
+      properties:
+        bookNumber:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        wordCount:
+          type: integer
+          nullable: true
+        funnelRole:
+          type: string
+          enum: [lead_magnet, traffic_entry, core_offer, crossover_bridge]
+        pricingStrategy:
+          type: string
+          enum: [perma_free, promotional, full_price]
+        price:
+          type: number
+          nullable: true
+        promotionalPrice:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [draft, production, ready, scheduled, published]
+        publicationDate:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledDate:
+          type: string
+          format: date-time
+          nullable: true
+        distributionChannel:
+          type: string
+          enum: [kdp, email_exclusive, wide]
+          nullable: true
+        asin:
+          type: string
+          nullable: true
+        isbn:
+          type: string
+          nullable: true
+        crossoverToSeriesId:
+          type: integer
+          nullable: true
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalAuthors:
+          type: integer
+        totalSeries:
+          type: integer
+        totalBooks:
+          type: integer
+        publishedBooks:
+          type: integer
+        scheduledBooks:
+          type: integer
+        inProductionBooks:
+          type: integer
+        draftBooks:
+          type: integer
+        nextRelease:
+          $ref: "#/components/schemas/Book"
+          nullable: true
+        booksByFunnelRole:
+          type: object
+          properties:
+            leadMagnet:
+              type: integer
+            trafficEntry:
+              type: integer
+            coreOffer:
+              type: integer
+            crossoverBridge:
+              type: integer
+          required: [leadMagnet, trafficEntry, coreOffer, crossoverBridge]
+        totalSubscribers:
+          type: integer
+        activeMailingLists:
+          type: integer
+      required: [totalAuthors, totalSeries, totalBooks, publishedBooks, scheduledBooks, inProductionBooks, draftBooks, booksByFunnelRole, totalSubscribers, activeMailingLists]
+
+    CalendarEntry:
+      type: object
+      properties:
+        bookId:
+          type: integer
+        title:
+          type: string
+        seriesName:
+          type: string
+        authorPenName:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+          nullable: true
+        publicationDate:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+        funnelRole:
+          type: string
+        bookNumber:
+          type: integer
+      required: [bookId, title, seriesName, authorPenName, status, funnelRole, bookNumber]
+
+    FunnelOverview:
+      type: object
+      properties:
+        stages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              label:
+                type: string
+              count:
+                type: integer
+              books:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    seriesName:
+                      type: string
+                    status:
+                      type: string
+                    pricingStrategy:
+                      type: string
+                    price:
+                      type: number
+                      nullable: true
+                  required: [id, title, seriesName, status, pricingStrategy]
+            required: [role, label, count, books]
+      required: [stages]
+
+    SeriesProgress:
+      type: object
+      properties:
+        seriesId:
+          type: integer
+        seriesName:
+          type: string
+        authorPenName:
+          type: string
+        status:
+          type: string
+        totalBooks:
+          type: integer
+        publishedBooks:
+          type: integer
+        scheduledBooks:
+          type: integer
+        draftBooks:
+          type: integer
+        progressPercent:
+          type: number
+        hasCrossover:
+          type: boolean
+        crossoverToSeriesName:
+          type: string
+          nullable: true
+      required: [seriesId, seriesName, authorPenName, status, totalBooks, publishedBooks, scheduledBooks, draftBooks, progressPercent, hasCrossover]
+
+    ActivityEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        bookId:
+          type: integer
+        bookTitle:
+          type: string
+        seriesName:
+          type: string
+        action:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, bookId, bookTitle, seriesName, action, timestamp]
+
+    MailingList:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        authorPenName:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        language:
+          type: string
+        leadMagnetBookId:
+          type: integer
+          nullable: true
+        leadMagnetBookTitle:
+          type: string
+          nullable: true
+        landingPageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        subscriberCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, authorId, authorPenName, name, language, isActive, subscriberCount, createdAt]
+
+    MailingListWithSubscribers:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        authorPenName:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        language:
+          type: string
+        leadMagnetBookId:
+          type: integer
+          nullable: true
+        leadMagnetBookTitle:
+          type: string
+          nullable: true
+        landingPageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        subscriberCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        subscribers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscriber"
+      required: [id, authorId, authorPenName, name, language, isActive, subscriberCount, createdAt, subscribers]
+
+    CreateMailingListBody:
+      type: object
+      properties:
+        authorId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        language:
+          type: string
+        leadMagnetBookId:
+          type: integer
+          nullable: true
+        landingPageUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+      required: [authorId, name, language]
+
+    Subscriber:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        language:
+          type: string
+        source:
+          type: string
+          enum: [lead_magnet, landing_page, manual, import]
+        status:
+          type: string
+          enum: [active, unsubscribed, bounced]
+        mailingListId:
+          type: integer
+        mailingListName:
+          type: string
+        authorPenName:
+          type: string
+        subscribedAt:
+          type: string
+          format: date-time
+        unsubscribedAt:
+          type: string
+          format: date-time
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+      required: [id, email, language, source, status, mailingListId, mailingListName, authorPenName, subscribedAt]
+
+    CreateSubscriberBody:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        language:
+          type: string
+        source:
+          type: string
+          enum: [lead_magnet, landing_page, manual, import]
+        mailingListId:
+          type: integer
+        tags:
+          type: string
+          nullable: true
+      required: [email, language, source, mailingListId]
+
+    UpdateSubscriberBody:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        language:
+          type: string
+        status:
+          type: string
+          enum: [active, unsubscribed, bounced]
+        tags:
+          type: string
+          nullable: true
+
+    ImportSubscribersBody:
+      type: object
+      properties:
+        mailingListId:
+          type: integer
+        subscribers:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              firstName:
+                type: string
+                nullable: true
+              lastName:
+                type: string
+                nullable: true
+              language:
+                type: string
+              tags:
+                type: string
+                nullable: true
+            required: [email]
+      required: [mailingListId, subscribers]
+
+    ImportSubscribersResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        duplicates:
+          type: integer
+        errors:
+          type: integer
+        total:
+          type: integer
+      required: [imported, duplicates, errors, total]
+
+    SubscriberStats:
+      type: object
+      properties:
+        totalSubscribers:
+          type: integer
+        activeSubscribers:
+          type: integer
+        unsubscribed:
+          type: integer
+        bounced:
+          type: integer
+        totalMailingLists:
+          type: integer
+        activeMailingLists:
+          type: integer
+        subscribersByLanguage:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+              count:
+                type: integer
+            required: [language, count]
+        subscribersByAuthor:
+          type: array
+          items:
+            type: object
+            properties:
+              authorPenName:
+                type: string
+              count:
+                type: integer
+            required: [authorPenName, count]
+        subscribersBySource:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              count:
+                type: integer
+            required: [source, count]
+        recentSubscribers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscriber"
+        growthByMonth:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+              count:
+                type: integer
+            required: [month, count]
+      required: [totalSubscribers, activeSubscribers, unsubscribed, bounced, totalMailingLists, activeMailingLists, subscribersByLanguage, subscribersByAuthor, subscribersBySource, recentSubscribers, growthByMonth]

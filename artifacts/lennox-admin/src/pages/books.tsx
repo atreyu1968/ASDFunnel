@@ -1,0 +1,557 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  useListBooks,
+  getListBooksQueryKey,
+  useCreateBook,
+  useUpdateBook,
+  useDeleteBook,
+  useListSeries,
+  getListSeriesQueryKey
+} from "@workspace/api-client-react";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit2, Trash2, Filter } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const bookSchema = z.object({
+  title: z.string().min(1, "El título es requerido"),
+  seriesId: z.coerce.number().min(1, "Debes seleccionar una serie"),
+  bookNumber: z.coerce.number().min(0, "El número debe ser 0 o mayor"),
+  subtitle: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  wordCount: z.coerce.number().optional().nullable(),
+  funnelRole: z.enum(["lead_magnet", "traffic_entry", "core_offer", "crossover_bridge"]),
+  pricingStrategy: z.enum(["perma_free", "promotional", "full_price"]),
+  price: z.coerce.number().optional().nullable(),
+  promotionalPrice: z.coerce.number().optional().nullable(),
+  status: z.enum(["draft", "production", "ready", "scheduled", "published"]),
+  publicationDate: z.string().optional().nullable(),
+  scheduledDate: z.string().optional().nullable(),
+  distributionChannel: z.enum(["kdp", "email_exclusive", "wide"]).optional().nullable(),
+  asin: z.string().optional().nullable(),
+  isbn: z.string().optional().nullable(),
+  crossoverToSeriesId: z.coerce.number().optional().nullable(),
+});
+
+type BookFormValues = z.infer<typeof bookSchema>;
+
+export default function Books() {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingBookId, setEditingBookId] = useState<number | null>(null);
+  
+  const [filterSeries, setFilterSeries] = useState<number | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<string | "all">("all");
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: books, isLoading } = useListBooks({
+    ...(filterSeries !== "all" ? { seriesId: filterSeries } : {}),
+    ...(filterStatus !== "all" ? { status: filterStatus as any } : {})
+  }, {
+    query: { queryKey: getListBooksQueryKey({
+      ...(filterSeries !== "all" ? { seriesId: filterSeries } : {}),
+      ...(filterStatus !== "all" ? { status: filterStatus as any } : {})
+    }) }
+  });
+
+  const { data: seriesList } = useListSeries(undefined, {
+    query: { queryKey: getListSeriesQueryKey() }
+  });
+
+  const createBook = useCreateBook();
+  const updateBook = useUpdateBook();
+  const deleteBook = useDeleteBook();
+
+  const form = useForm<BookFormValues>({
+    resolver: zodResolver(bookSchema),
+    defaultValues: {
+      title: "",
+      seriesId: 0,
+      bookNumber: 1,
+      subtitle: "",
+      description: "",
+      wordCount: null,
+      funnelRole: "core_offer",
+      pricingStrategy: "full_price",
+      price: null,
+      promotionalPrice: null,
+      status: "draft",
+      publicationDate: "",
+      scheduledDate: "",
+      distributionChannel: "kdp",
+      asin: "",
+      isbn: "",
+      crossoverToSeriesId: null,
+    },
+  });
+
+  const onSubmit = (data: BookFormValues) => {
+    if (editingBookId) {
+      updateBook.mutate({ id: editingBookId, data }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+          toast({ title: "Libro actualizado" });
+          setIsCreateOpen(false);
+          setEditingBookId(null);
+          form.reset();
+        },
+        onError: () => {
+          toast({ title: "Error al actualizar", variant: "destructive" });
+        }
+      });
+    } else {
+      createBook.mutate({ data }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+          toast({ title: "Libro creado" });
+          setIsCreateOpen(false);
+          form.reset();
+        },
+        onError: () => {
+          toast({ title: "Error al crear", variant: "destructive" });
+        }
+      });
+    }
+  };
+
+  const handleEdit = (book: any) => {
+    setEditingBookId(book.id);
+    form.reset({
+      title: book.title,
+      seriesId: book.seriesId,
+      bookNumber: book.bookNumber,
+      subtitle: book.subtitle || "",
+      description: book.description || "",
+      wordCount: book.wordCount,
+      funnelRole: book.funnelRole,
+      pricingStrategy: book.pricingStrategy,
+      price: book.price,
+      promotionalPrice: book.promotionalPrice,
+      status: book.status,
+      publicationDate: book.publicationDate ? book.publicationDate.split('T')[0] : "",
+      scheduledDate: book.scheduledDate ? book.scheduledDate.split('T')[0] : "",
+      distributionChannel: book.distributionChannel || "kdp",
+      asin: book.asin || "",
+      isbn: book.isbn || "",
+      crossoverToSeriesId: book.crossoverToSeriesId || null,
+    });
+    setIsCreateOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    deleteBook.mutate({ id }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+        toast({ title: "Libro eliminado" });
+      },
+      onError: () => {
+        toast({ title: "Error al eliminar", variant: "destructive" });
+      }
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "published": return <Badge className="bg-primary text-primary-foreground">Publicado</Badge>;
+      case "scheduled": return <Badge className="bg-blue-500 text-white">Programado</Badge>;
+      case "ready": return <Badge className="bg-green-600 text-white">Listo</Badge>;
+      case "production": return <Badge className="bg-amber-500 text-white">Producción</Badge>;
+      case "draft": return <Badge variant="outline">Borrador</Badge>;
+      default: return null;
+    }
+  };
+
+  const getFunnelBadge = (role: string) => {
+    switch (role) {
+      case "lead_magnet": return <Badge variant="secondary">Lead Magnet</Badge>;
+      case "traffic_entry": return <Badge variant="secondary">Entrada</Badge>;
+      case "core_offer": return <Badge variant="outline">Principal</Badge>;
+      case "crossover_bridge": return <Badge className="border-primary text-primary" variant="outline">Puente</Badge>;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Libros</h2>
+          <p className="text-muted-foreground">Catálogo de títulos y configuración del embudo.</p>
+        </div>
+        <Dialog open={isCreateOpen} onOpenChange={(open) => {
+          setIsCreateOpen(open);
+          if (!open) {
+            setEditingBookId(null);
+            form.reset({
+              title: "",
+              seriesId: 0,
+              bookNumber: 1,
+              subtitle: "",
+              description: "",
+              wordCount: null,
+              funnelRole: "core_offer",
+              pricingStrategy: "full_price",
+              price: null,
+              promotionalPrice: null,
+              status: "draft",
+              publicationDate: "",
+              scheduledDate: "",
+              distributionChannel: "kdp",
+              asin: "",
+              isbn: "",
+              crossoverToSeriesId: null,
+            });
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button><Plus className="mr-2 h-4 w-4" /> Nuevo Libro</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingBookId ? "Editar Libro" : "Crear Libro"}</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-6 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem className="col-span-4">
+                        <FormLabel>Título *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Título del libro" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bookNumber"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Número (#)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(Number(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="seriesId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Serie *</FormLabel>
+                        <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? field.value.toString() : undefined}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar serie" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {seriesList?.map(series => (
+                              <SelectItem key={series.id} value={series.id.toString()}>
+                                {series.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar estado" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">Borrador</SelectItem>
+                            <SelectItem value="production">En Producción</SelectItem>
+                            <SelectItem value="ready">Listo</SelectItem>
+                            <SelectItem value="scheduled">Programado</SelectItem>
+                            <SelectItem value="published">Publicado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg border">
+                  <FormField
+                    control={form.control}
+                    name="funnelRole"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rol en Embudo</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Rol" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="lead_magnet">Lead Magnet</SelectItem>
+                            <SelectItem value="traffic_entry">Entrada de Tráfico</SelectItem>
+                            <SelectItem value="core_offer">Oferta Principal</SelectItem>
+                            <SelectItem value="crossover_bridge">Puente Crossover</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pricingStrategy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estrategia Precio</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Estrategia" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="perma_free">Perma-Free</SelectItem>
+                            <SelectItem value="promotional">Promocional</SelectItem>
+                            <SelectItem value="full_price">Precio Completo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="scheduledDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha Programada</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="publicationDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha Publicación</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button type="submit" disabled={createBook.isPending || updateBook.isPending}>
+                    {editingBookId ? "Guardar Cambios" : "Crear Libro"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 bg-card p-4 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Filtros:</span>
+        </div>
+        <Select value={filterSeries.toString()} onValueChange={(v) => setFilterSeries(v === "all" ? "all" : Number(v))}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Todas las series" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las series</SelectItem>
+            {seriesList?.map(s => (
+              <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Todos los estados" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="draft">Borrador</SelectItem>
+            <SelectItem value="production">En Producción</SelectItem>
+            <SelectItem value="ready">Listo</SelectItem>
+            <SelectItem value="scheduled">Programado</SelectItem>
+            <SelectItem value="published">Publicado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : books && books.length > 0 ? (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
+                <tr>
+                  <th className="px-6 py-3">Libro</th>
+                  <th className="px-6 py-3">Serie / Autor</th>
+                  <th className="px-6 py-3">Rol Embudo</th>
+                  <th className="px-6 py-3">Estado</th>
+                  <th className="px-6 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y border-b-0">
+                {books.map((book) => (
+                  <tr key={book.id} className="bg-card hover:bg-muted/20 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-foreground">
+                        #{book.bookNumber} {book.title}
+                      </div>
+                      {book.scheduledDate && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          🗓 {format(new Date(book.scheduledDate), "d MMM yyyy", { locale: es })}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-foreground">{book.seriesName}</div>
+                      <div className="text-xs text-muted-foreground">{book.authorPenName}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {getFunnelBadge(book.funnelRole)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(book.status)}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar libro?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Se eliminará el libro del catálogo.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(book.id)}
+                                className="bg-destructive text-destructive-foreground"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <div className="text-center py-12 border rounded-lg border-dashed">
+          <p className="text-muted-foreground">No hay libros que coincidan con los filtros.</p>
+        </div>
+      )}
+    </div>
+  );
+}
