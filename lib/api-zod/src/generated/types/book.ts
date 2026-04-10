@@ -29,6 +29,8 @@ export interface Book {
   distributionChannel?: BookDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  coverImageUrl?: string | null;
+  manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
   seriesName: string;
   authorPenName: string;

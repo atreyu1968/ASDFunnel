@@ -12,4 +12,7 @@ export interface UpdateEmailSettingsBody {
   fromEmail?: string;
   fromName?: string;
   replyToEmail?: string;
+  aiProvider?: string;
+  aiApiKey?: string;
+  aiModel?: string;
 }

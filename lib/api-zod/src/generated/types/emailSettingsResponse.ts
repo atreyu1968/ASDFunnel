@@ -14,5 +14,9 @@ export interface EmailSettingsResponse {
   fromName?: string | null;
   replyToEmail?: string | null;
   isConfigured: boolean;
+  aiProvider?: string | null;
+  aiApiKey?: string | null;
+  aiModel?: string | null;
+  aiConfigured: boolean;
   updatedAt: string;
 }

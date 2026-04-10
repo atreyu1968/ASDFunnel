@@ -32,6 +32,8 @@ tags:
     description: Public email capture endpoints
   - name: settings
     description: Email provider configuration
+  - name: Storage
+    description: Object storage upload and serving endpoints.
 paths:
   /healthz:
     get:
@@ -1121,6 +1123,120 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestEmailResult"
 
+  # ── Storage ──
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  # ── Manuscript / AI Generation ──
+  /books/{id}/upload-manuscript:
+    post:
+      tags: [books]
+      operationId: uploadManuscript
+      summary: Upload a .docx manuscript and generate landing page with AI
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadManuscriptBody'
+      responses:
+        '200':
+          description: Landing page generated from manuscript
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedLandingPage'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
   # ── Dashboard / Analytics ──
   /dashboard/subscriber-stats:
     get:
@@ -1415,6 +1531,12 @@ components:
         isbn:
           type: string
           nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        manuscriptPath:
+          type: string
+          nullable: true
         crossoverToSeriesId:
           type: integer
           nullable: true
@@ -1480,6 +1602,12 @@ components:
         isbn:
           type: string
           nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        manuscriptPath:
+          type: string
+          nullable: true
         crossoverToSeriesId:
           type: integer
           nullable: true
@@ -1534,6 +1662,12 @@ components:
           type: string
           nullable: true
         isbn:
+          type: string
+          nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        manuscriptPath:
           type: string
           nullable: true
         crossoverToSeriesId:
@@ -2043,6 +2177,65 @@ components:
           type: string
       required: [success, message]
 
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    UploadManuscriptBody:
+      type: object
+      required: [manuscriptObjectPath]
+      properties:
+        manuscriptObjectPath:
+          type: string
+        generateLandingPage:
+          type: boolean
+          default: true
+    GeneratedLandingPage:
+      type: object
+      properties:
+        success:
+          type: boolean
+        bookId:
+          type: integer
+        landingPageId:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+        hook:
+          type: string
+        callToAction:
+          type: string
+      required: [success, bookId, title, description, hook, callToAction]
     # ── Dashboard ──
     DashboardSummary:
       type: object
@@ -2500,9 +2693,20 @@ components:
           nullable: true
         isConfigured:
           type: boolean
+        aiProvider:
+          type: string
+          nullable: true
+        aiApiKey:
+          type: string
+          nullable: true
+        aiModel:
+          type: string
+          nullable: true
+        aiConfigured:
+          type: boolean
         updatedAt:
           type: string
-      required: [id, provider, isConfigured, updatedAt]
+      required: [id, provider, isConfigured, aiConfigured, updatedAt]
 
     UpdateEmailSettingsBody:
       type: object
@@ -2516,6 +2720,12 @@ components:
         fromName:
           type: string
         replyToEmail:
+          type: string
+        aiProvider:
+          type: string
+        aiApiKey:
+          type: string
+        aiModel:
           type: string
 
     TestEmailBody:

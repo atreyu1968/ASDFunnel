@@ -10,6 +10,10 @@ export const emailSettingsTable = pgTable("email_settings", {
   fromName: text("from_name"),
   replyToEmail: text("reply_to_email"),
   isConfigured: boolean("is_configured").default(false).notNull(),
+  aiProvider: text("ai_provider"),
+  aiApiKey: text("ai_api_key"),
+  aiModel: text("ai_model"),
+  aiConfigured: boolean("ai_configured").default(false).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

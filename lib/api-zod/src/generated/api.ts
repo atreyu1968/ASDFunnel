@@ -180,6 +180,8 @@ export const GetSeriesResponse = zod.object({
         .nullish(),
       asin: zod.string().nullish(),
       isbn: zod.string().nullish(),
+      coverImageUrl: zod.string().nullish(),
+      manuscriptPath: zod.string().nullish(),
       crossoverToSeriesId: zod.number().nullish(),
       seriesName: zod.string(),
       authorPenName: zod.string(),
@@ -267,6 +269,8 @@ export const ListBooksResponseItem = zod.object({
   distributionChannel: zod.enum(["kdp", "email_exclusive", "wide"]).nullish(),
   asin: zod.string().nullish(),
   isbn: zod.string().nullish(),
+  coverImageUrl: zod.string().nullish(),
+  manuscriptPath: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
@@ -300,6 +304,8 @@ export const CreateBookBody = zod.object({
   distributionChannel: zod.enum(["kdp", "email_exclusive", "wide"]).nullish(),
   asin: zod.string().nullish(),
   isbn: zod.string().nullish(),
+  coverImageUrl: zod.string().nullish(),
+  manuscriptPath: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
 });
 
@@ -334,6 +340,8 @@ export const GetBookResponse = zod.object({
   distributionChannel: zod.enum(["kdp", "email_exclusive", "wide"]).nullish(),
   asin: zod.string().nullish(),
   isbn: zod.string().nullish(),
+  coverImageUrl: zod.string().nullish(),
+  manuscriptPath: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
@@ -370,6 +378,8 @@ export const UpdateBookBody = zod.object({
   distributionChannel: zod.enum(["kdp", "email_exclusive", "wide"]).nullish(),
   asin: zod.string().nullish(),
   isbn: zod.string().nullish(),
+  coverImageUrl: zod.string().nullish(),
+  manuscriptPath: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
 });
 
@@ -397,6 +407,8 @@ export const UpdateBookResponse = zod.object({
   distributionChannel: zod.enum(["kdp", "email_exclusive", "wide"]).nullish(),
   asin: zod.string().nullish(),
   isbn: zod.string().nullish(),
+  coverImageUrl: zod.string().nullish(),
+  manuscriptPath: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
@@ -1353,6 +1365,10 @@ export const GetEmailSettingsResponse = zod.object({
   fromName: zod.string().nullish(),
   replyToEmail: zod.string().nullish(),
   isConfigured: zod.boolean(),
+  aiProvider: zod.string().nullish(),
+  aiApiKey: zod.string().nullish(),
+  aiModel: zod.string().nullish(),
+  aiConfigured: zod.boolean(),
   updatedAt: zod.string(),
 });
 
@@ -1365,6 +1381,9 @@ export const UpdateEmailSettingsBody = zod.object({
   fromEmail: zod.string().optional(),
   fromName: zod.string().optional(),
   replyToEmail: zod.string().optional(),
+  aiProvider: zod.string().optional(),
+  aiApiKey: zod.string().optional(),
+  aiModel: zod.string().optional(),
 });
 
 export const UpdateEmailSettingsResponse = zod.object({
@@ -1375,6 +1394,10 @@ export const UpdateEmailSettingsResponse = zod.object({
   fromName: zod.string().nullish(),
   replyToEmail: zod.string().nullish(),
   isConfigured: zod.boolean(),
+  aiProvider: zod.string().nullish(),
+  aiApiKey: zod.string().nullish(),
+  aiModel: zod.string().nullish(),
+  aiConfigured: zod.boolean(),
   updatedAt: zod.string(),
 });
 
@@ -1388,6 +1411,68 @@ export const TestEmailSettingsBody = zod.object({
 export const TestEmailSettingsResponse = zod.object({
   success: zod.boolean(),
   message: zod.string(),
+});
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url(),
+  objectPath: zod.string(),
+  metadata: zod
+    .object({
+      name: zod.string().min(1),
+      size: zod.number().min(1),
+      contentType: zod.string().min(1),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Serve a public asset
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce.string(),
+});
+
+/**
+ * @summary Serve an object entity
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
+});
+
+/**
+ * @summary Upload a .docx manuscript and generate landing page with AI
+ */
+export const UploadManuscriptParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const uploadManuscriptBodyGenerateLandingPageDefault = true;
+
+export const UploadManuscriptBody = zod.object({
+  manuscriptObjectPath: zod.string(),
+  generateLandingPage: zod
+    .boolean()
+    .default(uploadManuscriptBodyGenerateLandingPageDefault),
+});
+
+export const UploadManuscriptResponse = zod.object({
+  success: zod.boolean(),
+  bookId: zod.number(),
+  landingPageId: zod.number().nullish(),
+  title: zod.string(),
+  description: zod.string(),
+  hook: zod.string(),
+  callToAction: zod.string(),
 });
 
 /**
@@ -1493,6 +1578,8 @@ export const GetDashboardSummaryResponse = zod.object({
         .nullish(),
       asin: zod.string().nullish(),
       isbn: zod.string().nullish(),
+      coverImageUrl: zod.string().nullish(),
+      manuscriptPath: zod.string().nullish(),
       crossoverToSeriesId: zod.number().nullish(),
       seriesName: zod.string(),
       authorPenName: zod.string(),

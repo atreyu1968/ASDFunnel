@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Filter } from "lucide-react";
+import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -93,9 +93,30 @@ const bookSchema = z.object({
 
 type BookFormValues = z.infer<typeof bookSchema>;
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+async function uploadFileToStorage(file: File): Promise<{ objectPath: string }> {
+  const res = await fetch(`${API_BASE}api/storage/uploads/request-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+  });
+  if (!res.ok) throw new Error("No se pudo solicitar la URL de subida");
+  const { uploadURL, objectPath } = await res.json();
+  const putRes = await fetch(uploadURL, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error("No se pudo subir el archivo");
+  return { objectPath };
+}
+
 export default function Books() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
+  const [uploadingCover, setUploadingCover] = useState<number | null>(null);
+  const [uploadingManuscript, setUploadingManuscript] = useState<number | null>(null);
   
   const [filterSeries, setFilterSeries] = useState<number | "all">("all");
   const [filterStatus, setFilterStatus] = useState<string | "all">("all");
@@ -221,6 +242,53 @@ export default function Books() {
         toast({ title: "Error al eliminar", variant: "destructive" });
       }
     });
+  };
+
+  const handleCoverUpload = async (bookId: number, file: File) => {
+    setUploadingCover(bookId);
+    try {
+      const { objectPath } = await uploadFileToStorage(file);
+      await updateBook.mutateAsync({
+        id: bookId,
+        data: { coverImageUrl: `${API_BASE}api/storage${objectPath}` } as any,
+      });
+      queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+      toast({ title: "Portada actualizada" });
+    } catch {
+      toast({ title: "Error al subir la portada", variant: "destructive" });
+    } finally {
+      setUploadingCover(null);
+    }
+  };
+
+  const handleManuscriptUpload = async (bookId: number, file: File) => {
+    setUploadingManuscript(bookId);
+    try {
+      const { objectPath } = await uploadFileToStorage(file);
+      const res = await fetch(`${API_BASE}api/books/${bookId}/upload-manuscript`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manuscriptObjectPath: objectPath, generateLandingPage: true }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+      if (result.landingPageId) {
+        toast({
+          title: "Landing page generada con IA",
+          description: `"${result.title}" - ${result.hook}`,
+        });
+      } else {
+        toast({ title: "Manuscrito guardado" });
+      }
+    } catch (e: any) {
+      toast({ title: "Error al procesar manuscrito", description: e.message, variant: "destructive" });
+    } finally {
+      setUploadingManuscript(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -529,38 +597,103 @@ export default function Books() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
                 <tr>
-                  <th className="px-6 py-3">Libro</th>
-                  <th className="px-6 py-3">Serie / Autor</th>
-                  <th className="px-6 py-3">Rol Embudo</th>
-                  <th className="px-6 py-3">Estado</th>
-                  <th className="px-6 py-3 text-right">Acciones</th>
+                  <th className="px-4 py-3 w-16"></th>
+                  <th className="px-4 py-3">Libro</th>
+                  <th className="px-4 py-3">Serie / Autor</th>
+                  <th className="px-4 py-3">Rol Embudo</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y border-b-0">
                 {books.map((book) => (
                   <tr key={book.id} className="bg-card hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 w-16">
+                      <div className="relative group w-12 h-16 bg-muted/40 rounded overflow-hidden border flex items-center justify-center">
+                        {book.coverImageUrl ? (
+                          <img 
+                            src={book.coverImageUrl} 
+                            alt={book.title} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                          {uploadingCover === book.id ? (
+                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4 text-white" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleCoverUpload(book.id, f);
+                              e.target.value = "";
+                            }}
+                            disabled={uploadingCover === book.id}
+                          />
+                        </label>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
                       <div className="font-medium text-foreground">
                         #{book.bookNumber} {book.title}
                       </div>
                       {book.scheduledDate && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          🗓 {format(new Date(book.scheduledDate), "d MMM yyyy", { locale: es })}
+                          {format(new Date(book.scheduledDate), "d MMM yyyy", { locale: es })}
+                        </div>
+                      )}
+                      {book.manuscriptPath && (
+                        <div className="text-xs text-green-500 mt-0.5 flex items-center gap-1">
+                          <FileText className="h-3 w-3" /> Manuscrito
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-foreground">{book.seriesName}</div>
                       <div className="text-xs text-muted-foreground">{book.authorPenName}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       {getFunnelBadge(book.funnelRole)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       {getStatusBadge(book.status)}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <label className="inline-flex">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-muted-foreground hover:text-primary" 
+                            asChild
+                            disabled={uploadingManuscript === book.id}
+                          >
+                            <span>
+                              {uploadingManuscript === book.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Brain className="h-4 w-4" />
+                              )}
+                            </span>
+                          </Button>
+                          <input
+                            type="file"
+                            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleManuscriptUpload(book.id, f);
+                              e.target.value = "";
+                            }}
+                            disabled={uploadingManuscript === book.id}
+                          />
+                        </label>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>

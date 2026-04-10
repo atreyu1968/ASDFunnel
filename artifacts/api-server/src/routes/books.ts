@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, booksTable, seriesTable, authorsTable, activityTable } from "@workspace/db";
+import { db, booksTable, seriesTable, authorsTable, activityTable, landingPagesTable, emailSettingsTable } from "@workspace/db";
 import {
   CreateBookBody,
   GetBookParams,
@@ -10,7 +10,10 @@ import {
   UpdateBookBody,
   UpdateBookParams,
   DeleteBookParams,
+  UploadManuscriptBody,
 } from "@workspace/api-zod";
+import { ObjectStorageService } from "../lib/objectStorage";
+import mammoth from "mammoth";
 
 const router: IRouter = Router();
 
@@ -47,6 +50,8 @@ router.get("/books", async (req, res): Promise<void> => {
       distributionChannel: booksTable.distributionChannel,
       asin: booksTable.asin,
       isbn: booksTable.isbn,
+      coverImageUrl: booksTable.coverImageUrl,
+      manuscriptPath: booksTable.manuscriptPath,
       crossoverToSeriesId: booksTable.crossoverToSeriesId,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
@@ -179,6 +184,8 @@ router.get("/books/:id", async (req, res): Promise<void> => {
       distributionChannel: booksTable.distributionChannel,
       asin: booksTable.asin,
       isbn: booksTable.isbn,
+      coverImageUrl: booksTable.coverImageUrl,
+      manuscriptPath: booksTable.manuscriptPath,
       crossoverToSeriesId: booksTable.crossoverToSeriesId,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
@@ -257,6 +264,155 @@ router.put("/books/:id", async (req, res): Promise<void> => {
     seriesName: seriesInfo?.seriesName ?? "",
     authorPenName: seriesInfo?.authorPenName ?? "",
   }));
+});
+
+router.post("/books/:id/upload-manuscript", async (req, res): Promise<void> => {
+  const bookId = Number(req.params.id);
+  if (isNaN(bookId)) {
+    res.status(400).json({ error: "Invalid book ID" });
+    return;
+  }
+
+  const parsed = UploadManuscriptBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [book] = await db
+    .select()
+    .from(booksTable)
+    .innerJoin(seriesTable, eq(booksTable.seriesId, seriesTable.id))
+    .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
+    .where(eq(booksTable.id, bookId));
+
+  if (!book) {
+    res.status(404).json({ error: "Book not found" });
+    return;
+  }
+
+  if (!parsed.data.generateLandingPage) {
+    await db.update(booksTable)
+      .set({ manuscriptPath: parsed.data.manuscriptObjectPath })
+      .where(eq(booksTable.id, bookId));
+    res.json({ success: true, bookId, title: "", description: "", hook: "", callToAction: "" });
+    return;
+  }
+
+  try {
+    const storageService = new ObjectStorageService();
+    const objectFile = await storageService.getObjectEntityFile(parsed.data.manuscriptObjectPath);
+    const [downloadResponse] = await objectFile.download();
+    const docxBuffer = Buffer.from(downloadResponse);
+    const { value: text } = await mammoth.extractRawText({ buffer: docxBuffer });
+
+    await db.update(booksTable)
+      .set({ manuscriptPath: parsed.data.manuscriptObjectPath })
+      .where(eq(booksTable.id, bookId));
+
+    const excerpt = text.slice(0, 8000);
+
+    const [settings] = await db.select().from(emailSettingsTable).limit(1);
+    if (!settings?.aiApiKey || !settings?.aiProvider) {
+      res.status(400).json({ error: "La configuración de IA no está configurada. Ve a Configuración para añadir tu API key de DeepSeek." });
+      return;
+    }
+
+    const lang = book.books.language || "es";
+    const langNames: Record<string, string> = { es: "español", en: "English", fr: "français", de: "Deutsch", it: "italiano", pt: "português" };
+    const langName = langNames[lang] || lang;
+
+    const prompt = `Eres un experto en marketing editorial de thrillers psicológicos. Analiza este extracto de manuscrito y genera contenido para una landing page de captación de emails.
+
+Libro: "${book.books.title}"
+Autor: "${book.authors.penName}"
+Serie: "${book.series.name}"
+Idioma del contenido: ${langName}
+
+Extracto del manuscrito:
+---
+${excerpt}
+---
+
+Genera en ${langName} un JSON con estos campos exactos:
+{
+  "title": "Título atractivo para la landing page (máx 80 caracteres)",
+  "description": "Descripción cautivadora del libro (150-300 caracteres). Debe crear urgencia y misterio.",
+  "hook": "Gancho principal - una frase que enganche al lector (máx 120 caracteres)",
+  "callToAction": "Texto del botón de captación (máx 40 caracteres)",
+  "metaTitle": "Meta título SEO (máx 60 caracteres)",
+  "metaDescription": "Meta descripción SEO (máx 160 caracteres)"
+}
+
+Responde SOLO con el JSON, sin markdown ni explicaciones.`;
+
+    const baseUrl = settings.aiProvider === "deepseek" 
+      ? "https://api.deepseek.com" 
+      : settings.aiProvider === "openai" 
+        ? "https://api.openai.com" 
+        : `https://api.${settings.aiProvider}.com`;
+
+    const aiResponse = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${settings.aiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: settings.aiModel || "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errText = await aiResponse.text();
+      req.log.error({ status: aiResponse.status, body: errText }, "AI API error");
+      res.status(500).json({ error: `Error de la API de IA (${aiResponse.status}). Verifica tu API key y modelo en Configuración.` });
+      return;
+    }
+
+    const aiResult = await aiResponse.json() as any;
+    const content = aiResult.choices?.[0]?.message?.content || "";
+
+    let generated: any;
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      generated = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+    } catch {
+      res.status(500).json({ error: "No se pudo parsear la respuesta de la IA" });
+      return;
+    }
+
+    let landingPageId: number | null = null;
+    if (generated.title && generated.description) {
+      const [lp] = await db.insert(landingPagesTable).values({
+        entityType: "book",
+        entityId: bookId,
+        language: lang,
+        title: generated.title,
+        description: generated.description,
+        metaTitle: generated.metaTitle || generated.title,
+        metaDescription: generated.metaDescription || generated.description,
+        url: "",
+        isPublished: false,
+      }).returning();
+      landingPageId = lp.id;
+    }
+
+    res.json({
+      success: true,
+      bookId,
+      landingPageId,
+      title: generated.title || "",
+      description: generated.description || "",
+      hook: generated.hook || "",
+      callToAction: generated.callToAction || "",
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: `Error procesando manuscrito: ${error.message}` });
+  }
 });
 
 router.delete("/books/:id", async (req, res): Promise<void> => {

@@ -40,7 +40,9 @@ import type {
   DashboardSummary,
   EmailSettingsResponse,
   EmailTemplate,
+  ErrorEnvelope,
   FunnelOverview,
+  GeneratedLandingPage,
   HealthStatus,
   ImportSubscribersBody,
   ImportSubscribersResult,
@@ -70,6 +72,9 @@ import type {
   UpdateEmailTemplateBody,
   UpdateLandingPageBody,
   UpdateSubscriberBody,
+  UploadManuscriptBody,
+  UploadUrlRequest,
+  UploadUrlResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -4677,6 +4682,356 @@ export const useTestEmailSettings = <
   TContext
 > => {
   return useMutation(getTestEmailSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const getRequestUploadUrlUrl = () => {
+  return `/api/storage/uploads/request-url`;
+};
+
+export const requestUploadUrl = async (
+  uploadUrlRequest: UploadUrlRequest,
+  options?: RequestInit,
+): Promise<UploadUrlResponse> => {
+  return customFetch<UploadUrlResponse>(getRequestUploadUrlUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(uploadUrlRequest),
+  });
+};
+
+export const getRequestUploadUrlMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<UploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<UploadUrlRequest> },
+  TContext
+> => {
+  const mutationKey = ["requestUploadUrl"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    { data: BodyType<UploadUrlRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestUploadUrl(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestUploadUrlMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestUploadUrl>>
+>;
+export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>;
+export type RequestUploadUrlMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const useRequestUploadUrl = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<UploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<UploadUrlRequest> },
+  TContext
+> => {
+  return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+/**
+ * @summary Serve a public asset
+ */
+export const getGetPublicObjectUrl = (filePath: string) => {
+  return `/api/storage/public-objects/${filePath}`;
+};
+
+export const getPublicObject = async (
+  filePath: string,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPublicObjectUrl(filePath), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPublicObjectQueryKey = (filePath: string) => {
+  return [`/api/storage/public-objects/${filePath}`] as const;
+};
+
+export const getGetPublicObjectQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicObject>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  filePath: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPublicObject>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPublicObjectQueryKey(filePath);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicObject>>> = ({
+    signal,
+  }) => getPublicObject(filePath, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!filePath,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicObject>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPublicObjectQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicObject>>
+>;
+export type GetPublicObjectQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Serve a public asset
+ */
+
+export function useGetPublicObject<
+  TData = Awaited<ReturnType<typeof getPublicObject>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  filePath: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPublicObject>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPublicObjectQueryOptions(filePath, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Serve an object entity
+ */
+export const getGetStorageObjectUrl = (objectPath: string) => {
+  return `/api/storage/objects/${objectPath}`;
+};
+
+export const getStorageObject = async (
+  objectPath: string,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetStorageObjectUrl(objectPath), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStorageObjectQueryKey = (objectPath: string) => {
+  return [`/api/storage/objects/${objectPath}`] as const;
+};
+
+export const getGetStorageObjectQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStorageObject>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  objectPath: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStorageObject>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStorageObjectQueryKey(objectPath);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStorageObject>>
+  > = ({ signal }) =>
+    getStorageObject(objectPath, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!objectPath,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStorageObject>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStorageObjectQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStorageObject>>
+>;
+export type GetStorageObjectQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Serve an object entity
+ */
+
+export function useGetStorageObject<
+  TData = Awaited<ReturnType<typeof getStorageObject>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  objectPath: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStorageObject>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStorageObjectQueryOptions(objectPath, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upload a .docx manuscript and generate landing page with AI
+ */
+export const getUploadManuscriptUrl = (id: number) => {
+  return `/api/books/${id}/upload-manuscript`;
+};
+
+export const uploadManuscript = async (
+  id: number,
+  uploadManuscriptBody: UploadManuscriptBody,
+  options?: RequestInit,
+): Promise<GeneratedLandingPage> => {
+  return customFetch<GeneratedLandingPage>(getUploadManuscriptUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(uploadManuscriptBody),
+  });
+};
+
+export const getUploadManuscriptMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadManuscript>>,
+    TError,
+    { id: number; data: BodyType<UploadManuscriptBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadManuscript>>,
+  TError,
+  { id: number; data: BodyType<UploadManuscriptBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadManuscript"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadManuscript>>,
+    { id: number; data: BodyType<UploadManuscriptBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return uploadManuscript(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadManuscriptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadManuscript>>
+>;
+export type UploadManuscriptMutationBody = BodyType<UploadManuscriptBody>;
+export type UploadManuscriptMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Upload a .docx manuscript and generate landing page with AI
+ */
+export const useUploadManuscript = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadManuscript>>,
+    TError,
+    { id: number; data: BodyType<UploadManuscriptBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadManuscript>>,
+  TError,
+  { id: number; data: BodyType<UploadManuscriptBody> },
+  TContext
+> => {
+  return useMutation(getUploadManuscriptMutationOptions(options));
 };
 
 /**

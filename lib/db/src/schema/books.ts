@@ -22,6 +22,8 @@ export const booksTable = pgTable("books", {
   distributionChannel: text("distribution_channel"),
   asin: text("asin"),
   isbn: text("isbn"),
+  coverImageUrl: text("cover_image_url"),
+  manuscriptPath: text("manuscript_path"),
   crossoverToSeriesId: integer("crossover_to_series_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

@@ -12,6 +12,7 @@ import automationsRouter from "./automations";
 import captureRouter from "./capture";
 import confirmationRouter from "./confirmation";
 import settingsRouter from "./settings";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(automationsRouter);
 router.use(captureRouter);
 router.use(confirmationRouter);
 router.use(settingsRouter);
+router.use(storageRouter);
 
 export default router;

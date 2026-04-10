@@ -118,6 +118,8 @@ export interface Book {
   distributionChannel?: BookDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  coverImageUrl?: string | null;
+  manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
   seriesName: string;
   authorPenName: string;
@@ -218,6 +220,8 @@ export interface CreateBookBody {
   distributionChannel?: CreateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  coverImageUrl?: string | null;
+  manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
 }
 
@@ -278,6 +282,8 @@ export interface UpdateBookBody {
   distributionChannel?: UpdateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  coverImageUrl?: string | null;
+  manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
 }
 
@@ -680,6 +686,40 @@ export interface UnsubscribeResult {
   message: string;
 }
 
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
+export interface UploadManuscriptBody {
+  manuscriptObjectPath: string;
+  generateLandingPage?: boolean;
+}
+
+export interface GeneratedLandingPage {
+  success: boolean;
+  bookId: number;
+  landingPageId?: number | null;
+  title: string;
+  description: string;
+  hook: string;
+  callToAction: string;
+}
+
 export type DashboardSummaryBooksByFunnelRole = {
   leadMagnet: number;
   trafficEntry: number;
@@ -942,6 +982,10 @@ export interface EmailSettingsResponse {
   fromName?: string | null;
   replyToEmail?: string | null;
   isConfigured: boolean;
+  aiProvider?: string | null;
+  aiApiKey?: string | null;
+  aiModel?: string | null;
+  aiConfigured: boolean;
   updatedAt: string;
 }
 
@@ -951,6 +995,9 @@ export interface UpdateEmailSettingsBody {
   fromEmail?: string;
   fromName?: string;
   replyToEmail?: string;
+  aiProvider?: string;
+  aiApiKey?: string;
+  aiModel?: string;
 }
 
 export interface TestEmailBody {

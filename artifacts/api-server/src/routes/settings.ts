@@ -22,6 +22,7 @@ router.get("/settings/email", async (_req, res): Promise<void> => {
   const masked = {
     ...settings,
     apiKey: settings.apiKey ? `${settings.apiKey.slice(0, 8)}${"•".repeat(20)}` : null,
+    aiApiKey: settings.aiApiKey ? `${settings.aiApiKey.slice(0, 8)}${"•".repeat(20)}` : null,
     updatedAt: settings.updatedAt.toISOString(),
   };
 
@@ -46,10 +47,17 @@ router.put("/settings/email", async (req, res): Promise<void> => {
   if (parsed.data.fromEmail !== undefined) updateData.fromEmail = parsed.data.fromEmail;
   if (parsed.data.fromName !== undefined) updateData.fromName = parsed.data.fromName;
   if (parsed.data.replyToEmail !== undefined) updateData.replyToEmail = parsed.data.replyToEmail;
+  if (parsed.data.aiProvider !== undefined) updateData.aiProvider = parsed.data.aiProvider;
+  if (parsed.data.aiApiKey !== undefined) updateData.aiApiKey = parsed.data.aiApiKey;
+  if (parsed.data.aiModel !== undefined) updateData.aiModel = parsed.data.aiModel;
 
   const hasKey = parsed.data.apiKey ?? existing?.apiKey;
   const hasFrom = parsed.data.fromEmail ?? existing?.fromEmail;
   updateData.isConfigured = !!(hasKey && hasFrom);
+
+  const hasAiKey = parsed.data.aiApiKey ?? existing?.aiApiKey;
+  const hasAiProvider = parsed.data.aiProvider ?? existing?.aiProvider;
+  updateData.aiConfigured = !!(hasAiKey && hasAiProvider);
 
   let settings;
   if (existing) {
@@ -64,13 +72,18 @@ router.put("/settings/email", async (req, res): Promise<void> => {
       fromEmail: parsed.data.fromEmail ?? null,
       fromName: parsed.data.fromName ?? null,
       replyToEmail: parsed.data.replyToEmail ?? null,
+      aiProvider: parsed.data.aiProvider ?? null,
+      aiApiKey: parsed.data.aiApiKey ?? null,
+      aiModel: parsed.data.aiModel ?? null,
       isConfigured: !!(parsed.data.apiKey && parsed.data.fromEmail),
+      aiConfigured: !!(parsed.data.aiApiKey && parsed.data.aiProvider),
     }).returning();
   }
 
   const masked = {
     ...settings,
     apiKey: settings.apiKey ? `${settings.apiKey.slice(0, 8)}${"•".repeat(20)}` : null,
+    aiApiKey: settings.aiApiKey ? `${settings.aiApiKey.slice(0, 8)}${"•".repeat(20)}` : null,
     updatedAt: settings.updatedAt.toISOString(),
   };
 

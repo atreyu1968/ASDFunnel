@@ -29,7 +29,7 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 ### Database Schema (PostgreSQL)
 - **authors**: Pen names, bios, brand descriptions, genre focus
 - **series**: Book series linked to authors, with status tracking
-- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling
+- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling, cover image URLs (GCS), manuscript paths
 - **mailing_lists**: Email lists separated by author AND language, with lead magnet book links
 - **subscribers**: Email subscribers with source tracking (lead_magnet, landing_page, manual, import), status management
 - **activity**: Audit log of book-related actions
@@ -37,13 +37,13 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **email_templates**: Email templates (welcome, lead_magnet, newsletter) with HTML/text bodies per language
 - **automation_rules**: Trigger-based automation rules (new_subscriber → send_email, assign_tag, etc.)
 - **automation_logs**: Execution logs for automation rules
-- **email_settings**: Email provider configuration (Resend API key, from email/name, reply-to) — managed from admin UI
+- **email_settings**: Email provider configuration (Resend API key, from email/name, reply-to) + AI config (provider: deepseek/openai, model, API key) — managed from admin UI
 
 ### Frontend Pages
 1. **Panel de Control** (`/`): Dashboard with stats, series progress, recent activity
 2. **Autores** (`/authors`): Author/pen name CRUD management
 3. **Series** (`/series`): Book series management with author association
-4. **Libros** (`/books`): Individual book management with funnel roles and pricing
+4. **Libros** (`/books`): Individual book management with funnel roles, pricing, cover image uploads (hover thumbnail), .docx manuscript upload with AI landing page generation (brain button)
 5. **Embudo** (`/funnel`): Multi-stage sales funnel visualization
 6. **Calendario** (`/calendar`): Rapid Release publication calendar
 7. **Listas de Correo** (`/mailing-lists`): Mailing list management with subscriber stats, language/author filtering
@@ -51,7 +51,19 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 9. **Landing Pages** (`/landing-pages`): Multi-language landing page management with SEO fields
 10. **Plantillas Email** (`/email-templates`): Email template editor with HTML/text, language and type filtering
 11. **Automatizaciones** (`/automations`): Automation rule builder with trigger/action config, execution logs
-12. **Configuración** (`/settings`): Resend email provider configuration (API key, sender info, test email)
+12. **Configuración** (`/settings`): Resend email provider configuration (API key, sender info, test email) + AI configuration (DeepSeek/OpenAI provider, model, API key for landing page generation)
+
+### Object Storage
+- Files (book covers, manuscripts) uploaded via presigned GCS URLs
+- Flow: browser → `POST /api/storage/uploads/request-url` → PUT to GCS → objectPath saved in DB
+- Served via `/api/storage/objects/{path}`
+
+### AI Landing Page Generation
+- .docx manuscripts parsed with `mammoth` library
+- Text sent to DeepSeek/OpenAI via `/v1/chat/completions` API
+- AI generates: title, description, hook, CTA text, SEO meta tags
+- Output saved directly to `landing_pages` table
+- Endpoint: `POST /api/books/:id/upload-manuscript`
 
 ### Sales Funnel Stages
 1. Lead Magnet (free precuela for email capture)

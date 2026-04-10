@@ -27,5 +27,7 @@ export interface UpdateBookBody {
   distributionChannel?: UpdateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  coverImageUrl?: string | null;
+  manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
 }
