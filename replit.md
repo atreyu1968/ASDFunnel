@@ -89,6 +89,17 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
+## Production Deployment (Ubuntu)
+- `install.sh` — autoinstaller for Ubuntu 22.04/24.04 (systemd + Nginx + PostgreSQL + optional Cloudflare Tunnel)
+- Config stored in `/etc/asdfunnel/env` (preserved across updates)
+- Nginx serves frontend static files at `/`, proxies `/api/*` to Node.js (port 5000)
+- In production, API server (`app.ts`) serves frontend static files as fallback for SPA routing
+- Local file storage (`localFileStorage.ts`) replaces Replit GCS sidecar, files saved to `$UPLOAD_DIR`
+- Storage route selection: Replit uses GCS (`storage.ts`), production uses local files (`localStorageRoutes.ts`)
+- `APP_BASE_URL` env var used for confirmation/unsubscribe email links
+- Vite config defaults: `BASE_PATH=/` and `PORT=3000` when building for production
+- GitHub repo: https://github.com/atreyu1968/ASDFunnel
+
 ## Seed Data
 - 1 author (Lennox Hale), 1 series (Agente Especial Sloane Keller), 5 books, 2 mailing lists (ES/EN), 3+ subscribers
 

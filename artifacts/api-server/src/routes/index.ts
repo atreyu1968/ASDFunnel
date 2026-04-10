@@ -12,8 +12,16 @@ import automationsRouter from "./automations";
 import captureRouter from "./capture";
 import confirmationRouter from "./confirmation";
 import settingsRouter from "./settings";
-import storageRouter from "./storage";
 import aiRouter from "./ai";
+
+const isReplit = !!process.env.REPL_ID;
+
+let storageRouter: IRouter;
+if (isReplit) {
+  storageRouter = (await import("./storage")).default;
+} else {
+  storageRouter = (await import("./localStorageRoutes")).default;
+}
 
 const router: IRouter = Router();
 

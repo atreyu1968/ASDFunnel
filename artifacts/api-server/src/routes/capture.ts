@@ -25,9 +25,8 @@ async function sendConfirmationEmail(subscriberId: number, email: string, langua
     ));
 
   if (confirmTemplate) {
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : "https://tudominio.com";
+    const baseUrl = process.env.APP_BASE_URL
+      || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : `http://localhost:${process.env.PORT || 5000}`);
 
     await sendTemplateEmail(confirmTemplate.id, email, {
       email,
