@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Mail, FileCode } from "lucide-react";
+import { Plus, Edit2, Trash2, Mail, FileCode, Eye } from "lucide-react";
 import type { EmailTemplate } from "@workspace/api-client-react";
 
 const templateTypeLabels: Record<string, string> = {
@@ -86,6 +86,7 @@ export default function EmailTemplates() {
   const [filterType, setFilterType] = useState<string>("all");
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [previewTab, setPreviewTab] = useState<"html" | "text" | "code">("html");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -396,7 +397,7 @@ export default function EmailTemplates() {
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="ghost" size="icon" onClick={() => setPreviewTemplate(template)} title="Vista previa">
-                      <FileCode className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(template)}>
                       <Edit2 className="h-4 w-4" />
@@ -446,25 +447,68 @@ export default function EmailTemplates() {
         </div>
       )}
 
-      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      <Dialog open={!!previewTemplate} onOpenChange={() => { setPreviewTemplate(null); setPreviewTab("html"); }}>
+        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Vista Previa: {previewTemplate?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Vista Previa
+            </DialogTitle>
           </DialogHeader>
           {previewTemplate && (
-            <div className="space-y-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Asunto: </span>
-                <span className="font-medium">{previewTemplate.subject}</span>
+            <div className="flex flex-col gap-3 min-h-0 flex-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="outline">{templateTypeLabels[previewTemplate.templateType] || previewTemplate.templateType}</Badge>
+                <Badge variant="outline" className="uppercase">{previewTemplate.language}</Badge>
+                {previewTemplate.mailingListName && (
+                  <Badge variant="secondary">{previewTemplate.mailingListName}</Badge>
+                )}
               </div>
-              <div className="border rounded-lg p-4 bg-white text-black">
-                <div dangerouslySetInnerHTML={{ __html: previewTemplate.bodyHtml }} />
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1">
+                <div className="text-xs text-muted-foreground">De: <span className="text-foreground">{"{{autor_nombre}}"} &lt;noreply@tueditorial.com&gt;</span></div>
+                <div className="text-xs text-muted-foreground">Asunto: <span className="text-foreground font-medium">{previewTemplate.subject}</span></div>
               </div>
-              {previewTemplate.bodyText && (
-                <div className="border rounded-lg p-4 bg-muted">
-                  <p className="text-xs font-mono whitespace-pre-wrap">{previewTemplate.bodyText}</p>
-                </div>
-              )}
+              <div className="flex gap-1 border-b border-border">
+                <button
+                  onClick={() => setPreviewTab("html")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${previewTab === "html" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  HTML
+                </button>
+                <button
+                  onClick={() => setPreviewTab("text")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${previewTab === "text" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  Texto plano
+                </button>
+                <button
+                  onClick={() => setPreviewTab("code")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${previewTab === "code" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  Código
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-border">
+                {previewTab === "html" && (
+                  <iframe
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:0;background:#e5e5e5;}</style></head><body>${previewTemplate.bodyHtml}</body></html>`}
+                    className="w-full border-0 rounded-lg"
+                    style={{ height: "480px" }}
+                    title="Vista previa HTML"
+                    sandbox="allow-same-origin"
+                  />
+                )}
+                {previewTab === "text" && (
+                  <div className="p-4 bg-muted/50 font-mono text-xs whitespace-pre-wrap min-h-[200px]">
+                    {previewTemplate.bodyText || "(Sin versión de texto plano)"}
+                  </div>
+                )}
+                {previewTab === "code" && (
+                  <div className="p-4 bg-muted/50 font-mono text-xs whitespace-pre-wrap min-h-[200px] overflow-x-auto">
+                    {previewTemplate.bodyHtml}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
