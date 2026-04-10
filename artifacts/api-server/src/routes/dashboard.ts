@@ -122,6 +122,7 @@ router.get("/dashboard/funnel-overview", async (_req, res): Promise<void> => {
           id: booksTable.id,
           title: booksTable.title,
           seriesName: seriesTable.name,
+          language: booksTable.language,
           status: booksTable.status,
           pricingStrategy: booksTable.pricingStrategy,
           price: booksTable.price,
