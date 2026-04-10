@@ -271,7 +271,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Nombre del remitente</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Lennox Hale Publishing" />
+                          <Input {...field} placeholder="ASD Funnel Publishing" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

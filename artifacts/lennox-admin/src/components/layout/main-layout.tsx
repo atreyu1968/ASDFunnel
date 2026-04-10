@@ -37,7 +37,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <aside className="w-64 border-r border-border bg-card flex flex-col">
         <div className="p-6 border-b border-border">
           <h1 className="text-lg font-bold tracking-tight text-primary uppercase">
-            LENNOX HALE
+            ASD FUNNEL
           </h1>
           <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
             Publishing Op
