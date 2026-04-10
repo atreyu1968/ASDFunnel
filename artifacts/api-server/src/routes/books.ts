@@ -61,10 +61,74 @@ router.get("/books", async (req, res): Promise<void> => {
   res.json(ListBooksResponse.parse(books));
 });
 
+async function validateFunnelOrder(seriesId: number, funnelRole: string | undefined, status: string | undefined, scheduledDate: string | null | undefined, publicationDate: string | null | undefined, excludeBookId?: number): Promise<string | null> {
+  if (!funnelRole || !seriesId) return null;
+
+  const seriesBooks = await db
+    .select({
+      id: booksTable.id,
+      funnelRole: booksTable.funnelRole,
+      status: booksTable.status,
+      scheduledDate: booksTable.scheduledDate,
+      publicationDate: booksTable.publicationDate,
+    })
+    .from(booksTable)
+    .where(eq(booksTable.seriesId, seriesId));
+
+  const otherBooks = excludeBookId ? seriesBooks.filter(b => b.id !== excludeBookId) : seriesBooks;
+
+  const effectiveDate = publicationDate || scheduledDate;
+
+  if (funnelRole === "traffic_entry" && (status === "published" || status === "scheduled")) {
+    const leadMagnet = otherBooks.find(b => b.funnelRole === "lead_magnet");
+    if (!leadMagnet) {
+      return "No se puede publicar/programar el libro de entrada sin un lead magnet en la misma serie.";
+    }
+    if (leadMagnet.status !== "published") {
+      return "El lead magnet debe estar publicado antes de publicar/programar el libro de entrada.";
+    }
+    const lmDate = leadMagnet.publicationDate || leadMagnet.scheduledDate;
+    if (effectiveDate && lmDate && new Date(effectiveDate) <= new Date(lmDate as string)) {
+      return "La fecha del libro de entrada debe ser posterior a la fecha de publicación del lead magnet.";
+    }
+  }
+
+  if (funnelRole === "core_offer" && (status === "published" || status === "scheduled")) {
+    const trafficEntry = otherBooks.find(b => b.funnelRole === "traffic_entry");
+    if (trafficEntry) {
+      const teDate = trafficEntry.publicationDate || trafficEntry.scheduledDate;
+      if (!teDate) {
+        return "El libro de entrada debe tener fecha antes de programar ofertas principales.";
+      }
+      if (effectiveDate && new Date(effectiveDate) <= new Date(teDate as string)) {
+        return "La fecha de la oferta principal debe ser posterior a la fecha del libro de entrada.";
+      }
+    }
+    const leadMagnet = otherBooks.find(b => b.funnelRole === "lead_magnet");
+    if (leadMagnet && leadMagnet.status !== "published") {
+      return "El lead magnet debe estar publicado antes de programar ofertas principales.";
+    }
+  }
+
+  return null;
+}
+
 router.post("/books", async (req, res): Promise<void> => {
   const parsed = CreateBookBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const funnelError = await validateFunnelOrder(
+    parsed.data.seriesId,
+    parsed.data.funnelRole,
+    parsed.data.status,
+    parsed.data.scheduledDate,
+    parsed.data.publicationDate
+  );
+  if (funnelError) {
+    res.status(400).json({ error: funnelError });
     return;
   }
 
@@ -146,6 +210,28 @@ router.put("/books/:id", async (req, res): Promise<void> => {
   }
 
   const [oldBook] = await db.select().from(booksTable).where(eq(booksTable.id, params.data.id));
+  if (!oldBook) {
+    res.status(404).json({ error: "Book not found" });
+    return;
+  }
+
+  const mergedFunnelRole = parsed.data.funnelRole ?? oldBook.funnelRole;
+  const mergedStatus = parsed.data.status ?? oldBook.status;
+  const mergedScheduledDate = parsed.data.scheduledDate !== undefined ? parsed.data.scheduledDate : oldBook.scheduledDate;
+  const mergedPublicationDate = parsed.data.publicationDate !== undefined ? parsed.data.publicationDate : oldBook.publicationDate;
+
+  const funnelError = await validateFunnelOrder(
+    oldBook.seriesId,
+    mergedFunnelRole ?? undefined,
+    mergedStatus ?? undefined,
+    mergedScheduledDate ? String(mergedScheduledDate) : null,
+    mergedPublicationDate ? String(mergedPublicationDate) : null,
+    params.data.id
+  );
+  if (funnelError) {
+    res.status(400).json({ error: funnelError });
+    return;
+  }
 
   const [book] = await db.update(booksTable).set(parsed.data).where(eq(booksTable.id, params.data.id)).returning();
   if (!book) {

@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, Filter } from "lucide-react";
+import { CalendarIcon, Filter, AlertTriangle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const languageLabels: Record<string, string> = {
   es: "Español",
@@ -103,6 +109,56 @@ export default function Calendar() {
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredEntries]);
+
+  const funnelWarnings = useMemo(() => {
+    if (!calendarEntries) return new Map<number, string>();
+    const warnings = new Map<number, string>();
+
+    const bySeries = new Map<string, typeof calendarEntries>();
+    for (const entry of calendarEntries) {
+      const key = `${entry.seriesName}-${entry.language}`;
+      if (!bySeries.has(key)) bySeries.set(key, []);
+      bySeries.get(key)!.push(entry);
+    }
+
+    for (const [, books] of bySeries) {
+      const leadMagnet = books.find(b => b.funnelRole === "lead_magnet");
+      const trafficEntry = books.find(b => b.funnelRole === "traffic_entry");
+
+      if (trafficEntry && !leadMagnet) {
+        warnings.set(trafficEntry.bookId, "No hay lead magnet en esta serie. Debe publicarse antes del libro de entrada.");
+      }
+
+      if (trafficEntry && leadMagnet) {
+        if (leadMagnet.status !== "published" && (trafficEntry.status === "published" || trafficEntry.status === "scheduled")) {
+          warnings.set(trafficEntry.bookId, "El lead magnet debe estar publicado antes de lanzar el libro de entrada.");
+        }
+
+        const lmDate = leadMagnet.publicationDate || leadMagnet.scheduledDate;
+        const teDate = trafficEntry.publicationDate || trafficEntry.scheduledDate;
+        if (lmDate && teDate && new Date(teDate) <= new Date(lmDate)) {
+          warnings.set(trafficEntry.bookId, "La fecha del libro de entrada debe ser posterior a la del lead magnet.");
+        }
+      }
+
+      const coreOffers = books.filter(b => b.funnelRole === "core_offer");
+      for (const core of coreOffers) {
+        if (core.status !== "published" && core.status !== "scheduled") continue;
+        if (leadMagnet && leadMagnet.status !== "published") {
+          warnings.set(core.bookId, "El lead magnet debe estar publicado antes de programar ofertas principales.");
+        }
+        if (trafficEntry) {
+          const teDate = trafficEntry.publicationDate || trafficEntry.scheduledDate;
+          const coreDate = core.publicationDate || core.scheduledDate;
+          if (teDate && coreDate && new Date(coreDate) <= new Date(teDate)) {
+            warnings.set(core.bookId, "La fecha debe ser posterior a la del libro de entrada.");
+          }
+        }
+      }
+    }
+
+    return warnings;
+  }, [calendarEntries]);
 
   const hasActiveFilters = filterLanguage !== "all" || filterAuthor !== "all" || filterSeries !== "all" || filterStatus !== "all";
 
@@ -271,6 +327,20 @@ export default function Calendar() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
+                                {funnelWarnings.has(entry.bookId) && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="flex items-center gap-1 text-amber-500">
+                                          <AlertTriangle className="h-4 w-4" />
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-xs bg-amber-950 border-amber-800 text-amber-200">
+                                        <p className="text-sm">{funnelWarnings.get(entry.bookId)}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                                 {entry.funnelRole === "lead_magnet" && (
                                   <Badge variant="secondary">Lead Magnet</Badge>
                                 )}
