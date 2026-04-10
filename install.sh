@@ -186,22 +186,24 @@ print_step "7/8 Compilando aplicación"
 
 cd "$APP_DIR"
 
-export NODE_ENV=production
 export PORT=$APP_PORT
 export BASE_PATH="/"
 export DATABASE_URL="$DATABASE_URL"
 
 print_status "Instalando dependencias (pnpm install)..."
-sudo -u "$APP_USER" -E pnpm install --frozen-lockfile 2>&1 | tail -3
+sudo -u "$APP_USER" -E env NODE_ENV=development pnpm install --frozen-lockfile 2>&1 | tail -3
 
 print_status "Compilando frontend..."
-sudo -u "$APP_USER" -E pnpm --filter @workspace/lennox-admin run build 2>&1 | tail -3
+sudo -u "$APP_USER" -E env NODE_ENV=production pnpm --filter @workspace/lennox-admin run build 2>&1 | tail -3
 
 print_status "Compilando API server..."
-sudo -u "$APP_USER" -E pnpm --filter @workspace/api-server run build 2>&1 | tail -3
+sudo -u "$APP_USER" -E env NODE_ENV=production pnpm --filter @workspace/api-server run build 2>&1 | tail -3
 
 print_status "Sincronizando esquema de base de datos..."
 sudo -u "$APP_USER" -E pnpm --filter @workspace/db run push 2>&1 | tail -3
+
+print_status "Limpiando dependencias de desarrollo..."
+sudo -u "$APP_USER" -E env NODE_ENV=production pnpm install --frozen-lockfile 2>&1 | tail -3 || true
 
 print_success "Aplicación compilada correctamente"
 
