@@ -63,6 +63,7 @@ import { Plus, Edit2, Trash2, Library, GitMerge } from "lucide-react";
 const seriesSchema = z.object({
   name: z.string().min(1, "El nombre de la serie es requerido"),
   authorId: z.coerce.number().min(1, "Debes seleccionar un autor"),
+  language: z.string().min(1, "El idioma es requerido"),
   description: z.string().optional().nullable(),
   genre: z.string().optional().nullable(),
   status: z.enum(["active", "planned", "completed"]).default("planned"),
@@ -70,17 +71,30 @@ const seriesSchema = z.object({
   crossoverFromSeriesId: z.coerce.number().optional().nullable(),
 });
 
+const languageLabels: Record<string, string> = {
+  es: "Español",
+  en: "English",
+  fr: "Français",
+  de: "Deutsch",
+  pt: "Português",
+  it: "Italiano",
+};
+
 type SeriesFormValues = z.infer<typeof seriesSchema>;
 
 export default function Series() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(null);
+  const [filterLanguage, setFilterLanguage] = useState<string>("all");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: seriesList, isLoading } = useListSeries(undefined, {
-    query: { queryKey: getListSeriesQueryKey() }
+  const listParams: Record<string, string | undefined> = {};
+  if (filterLanguage !== "all") listParams.language = filterLanguage;
+
+  const { data: seriesList, isLoading } = useListSeries(listParams, {
+    query: { queryKey: getListSeriesQueryKey(listParams) }
   });
 
   const { data: authors } = useListAuthors({
@@ -96,6 +110,7 @@ export default function Series() {
     defaultValues: {
       name: "",
       authorId: 0,
+      language: "es",
       description: "",
       genre: "",
       status: "planned",
@@ -138,6 +153,7 @@ export default function Series() {
     form.reset({
       name: series.name,
       authorId: series.authorId,
+      language: series.language || "es",
       description: series.description || "",
       genre: series.genre || "",
       status: series.status,
@@ -182,6 +198,7 @@ export default function Series() {
             form.reset({
               name: "",
               authorId: 0,
+              language: "es",
               description: "",
               genre: "",
               status: "planned",
@@ -260,6 +277,28 @@ export default function Series() {
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Idioma *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar idioma" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(languageLabels).map(([code, label]) => (
+                            <SelectItem key={code} value={code}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -305,7 +344,7 @@ export default function Series() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción de la Serie</FormLabel>
+                      <FormLabel>Descripción</FormLabel>
                       <FormControl>
                         <Textarea placeholder="Trama general de la serie" {...field} value={field.value || ""} />
                       </FormControl>
@@ -322,6 +361,20 @@ export default function Series() {
             </Form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="flex gap-3">
+        <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Todos los idiomas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los idiomas</SelectItem>
+            {Object.entries(languageLabels).map(([code, label]) => (
+              <SelectItem key={code} value={code}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -346,6 +399,9 @@ export default function Series() {
                       <span>•</span>
                       <span>{series.bookCount} libros</span>
                     </div>
+                    <Badge variant="outline" className="uppercase text-xs w-fit">
+                      {languageLabels[(series as any).language] || (series as any).language || "—"}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusBadge(series.status)}

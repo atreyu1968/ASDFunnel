@@ -11,6 +11,9 @@ import Funnel from "@/pages/funnel";
 import Calendar from "@/pages/calendar";
 import MailingLists from "@/pages/mailing-lists";
 import Subscribers from "@/pages/subscribers";
+import LandingPages from "@/pages/landing-pages";
+import EmailTemplates from "@/pages/email-templates";
+import Automations from "@/pages/automations";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -34,6 +37,9 @@ function Router() {
         <Route path="/calendar" component={Calendar} />
         <Route path="/mailing-lists" component={MailingLists} />
         <Route path="/subscribers" component={Subscribers} />
+        <Route path="/landing-pages" component={LandingPages} />
+        <Route path="/email-templates" component={EmailTemplates} />
+        <Route path="/automations" component={Automations} />
         <Route component={NotFound} />
       </Switch>
     </MainLayout>

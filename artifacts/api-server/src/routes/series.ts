@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, seriesTable, authorsTable, booksTable } from "@workspace/db";
 import {
   CreateSeriesBody,
@@ -23,9 +23,8 @@ router.get("/series", async (req, res): Promise<void> => {
   }
 
   const conditions = [];
-  if (query.data.authorId) {
-    conditions.push(eq(seriesTable.authorId, query.data.authorId));
-  }
+  if (query.data.authorId) conditions.push(eq(seriesTable.authorId, query.data.authorId));
+  if (query.data.language) conditions.push(eq(seriesTable.language, query.data.language));
 
   const seriesList = await db
     .select({
@@ -34,6 +33,7 @@ router.get("/series", async (req, res): Promise<void> => {
       name: seriesTable.name,
       description: seriesTable.description,
       genre: seriesTable.genre,
+      language: seriesTable.language,
       status: seriesTable.status,
       displayOrder: seriesTable.displayOrder,
       crossoverFromSeriesId: seriesTable.crossoverFromSeriesId,
@@ -43,7 +43,7 @@ router.get("/series", async (req, res): Promise<void> => {
     })
     .from(seriesTable)
     .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
-    .where(conditions.length ? conditions[0] : undefined)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(seriesTable.displayOrder);
 
   const withCrossover = await Promise.all(
@@ -69,6 +69,7 @@ router.post("/series", async (req, res): Promise<void> => {
 
   const [series] = await db.insert(seriesTable).values({
     ...parsed.data,
+    language: parsed.data.language ?? "es",
     status: parsed.data.status ?? "planned",
     displayOrder: parsed.data.displayOrder ?? 0,
   }).returning();
@@ -97,6 +98,7 @@ router.get("/series/:id", async (req, res): Promise<void> => {
       name: seriesTable.name,
       description: seriesTable.description,
       genre: seriesTable.genre,
+      language: seriesTable.language,
       status: seriesTable.status,
       displayOrder: seriesTable.displayOrder,
       crossoverFromSeriesId: seriesTable.crossoverFromSeriesId,
@@ -126,6 +128,7 @@ router.get("/series/:id", async (req, res): Promise<void> => {
       title: booksTable.title,
       subtitle: booksTable.subtitle,
       description: booksTable.description,
+      language: booksTable.language,
       wordCount: booksTable.wordCount,
       funnelRole: booksTable.funnelRole,
       pricingStrategy: booksTable.pricingStrategy,

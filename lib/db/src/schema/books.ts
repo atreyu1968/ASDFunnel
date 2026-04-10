@@ -10,6 +10,7 @@ export const booksTable = pgTable("books", {
   title: text("title").notNull(),
   subtitle: text("subtitle"),
   description: text("description"),
+  language: text("language").notNull().default("es"),
   wordCount: integer("word_count"),
   funnelRole: text("funnel_role").notNull().default("core_offer"),
   pricingStrategy: text("pricing_strategy").notNull().default("full_price"),

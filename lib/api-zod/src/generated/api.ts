@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
@@ -93,6 +93,7 @@ export const DeleteAuthorParams = zod.object({
  */
 export const ListSeriesQueryParams = zod.object({
   authorId: zod.coerce.number().optional(),
+  language: zod.coerce.string().optional(),
 });
 
 export const ListSeriesResponseItem = zod.object({
@@ -101,6 +102,7 @@ export const ListSeriesResponseItem = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   genre: zod.string().nullish(),
+  language: zod.string(),
   status: zod.enum(["active", "planned", "completed"]),
   displayOrder: zod.number(),
   crossoverFromSeriesId: zod.number().nullish(),
@@ -119,6 +121,7 @@ export const CreateSeriesBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   genre: zod.string().nullish(),
+  language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
   displayOrder: zod.number().optional(),
   crossoverFromSeriesId: zod.number().nullish(),
@@ -137,6 +140,7 @@ export const GetSeriesResponse = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   genre: zod.string().nullish(),
+  language: zod.string(),
   status: zod.enum(["active", "planned", "completed"]),
   displayOrder: zod.number(),
   crossoverFromSeriesId: zod.number().nullish(),
@@ -151,6 +155,7 @@ export const GetSeriesResponse = zod.object({
       title: zod.string(),
       subtitle: zod.string().nullish(),
       description: zod.string().nullish(),
+      language: zod.string(),
       wordCount: zod.number().nullish(),
       funnelRole: zod.enum([
         "lead_magnet",
@@ -195,6 +200,7 @@ export const UpdateSeriesBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   genre: zod.string().nullish(),
+  language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
   displayOrder: zod.number().optional(),
   crossoverFromSeriesId: zod.number().nullish(),
@@ -206,6 +212,7 @@ export const UpdateSeriesResponse = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   genre: zod.string().nullish(),
+  language: zod.string(),
   status: zod.enum(["active", "planned", "completed"]),
   displayOrder: zod.number(),
   crossoverFromSeriesId: zod.number().nullish(),
@@ -233,6 +240,7 @@ export const ListBooksQueryParams = zod.object({
   funnelRole: zod
     .enum(["lead_magnet", "traffic_entry", "core_offer", "crossover_bridge"])
     .optional(),
+  language: zod.coerce.string().optional(),
 });
 
 export const ListBooksResponseItem = zod.object({
@@ -242,6 +250,7 @@ export const ListBooksResponseItem = zod.object({
   title: zod.string(),
   subtitle: zod.string().nullish(),
   description: zod.string().nullish(),
+  language: zod.string(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
     "lead_magnet",
@@ -274,6 +283,7 @@ export const CreateBookBody = zod.object({
   title: zod.string(),
   subtitle: zod.string().nullish(),
   description: zod.string().nullish(),
+  language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
     "lead_magnet",
@@ -307,6 +317,7 @@ export const GetBookResponse = zod.object({
   title: zod.string(),
   subtitle: zod.string().nullish(),
   description: zod.string().nullish(),
+  language: zod.string(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
     "lead_magnet",
@@ -341,6 +352,7 @@ export const UpdateBookBody = zod.object({
   title: zod.string().optional(),
   subtitle: zod.string().nullish(),
   description: zod.string().nullish(),
+  language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod
     .enum(["lead_magnet", "traffic_entry", "core_offer", "crossover_bridge"])
@@ -368,6 +380,7 @@ export const UpdateBookResponse = zod.object({
   title: zod.string(),
   subtitle: zod.string().nullish(),
   description: zod.string().nullish(),
+  language: zod.string(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
     "lead_magnet",
@@ -461,7 +474,13 @@ export const GetMailingListResponse = zod.object({
       firstName: zod.string().nullish(),
       lastName: zod.string().nullish(),
       language: zod.string(),
-      source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+      source: zod.enum([
+        "lead_magnet",
+        "landing_page",
+        "manual",
+        "import",
+        "capture",
+      ]),
       status: zod.enum(["active", "unsubscribed", "bounced"]),
       mailingListId: zod.number(),
       mailingListName: zod.string(),
@@ -519,7 +538,7 @@ export const ListSubscribersQueryParams = zod.object({
   mailingListId: zod.coerce.number().optional(),
   status: zod.enum(["active", "unsubscribed", "bounced"]).optional(),
   source: zod
-    .enum(["lead_magnet", "landing_page", "manual", "import"])
+    .enum(["lead_magnet", "landing_page", "manual", "import", "capture"])
     .optional(),
   language: zod.coerce.string().optional(),
 });
@@ -530,7 +549,13 @@ export const ListSubscribersResponseItem = zod.object({
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
   language: zod.string(),
-  source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+  source: zod.enum([
+    "lead_magnet",
+    "landing_page",
+    "manual",
+    "import",
+    "capture",
+  ]),
   status: zod.enum(["active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
@@ -549,7 +574,13 @@ export const CreateSubscriberBody = zod.object({
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
   language: zod.string(),
-  source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+  source: zod.enum([
+    "lead_magnet",
+    "landing_page",
+    "manual",
+    "import",
+    "capture",
+  ]),
   mailingListId: zod.number(),
   tags: zod.string().nullish(),
 });
@@ -567,7 +598,13 @@ export const GetSubscriberResponse = zod.object({
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
   language: zod.string(),
-  source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+  source: zod.enum([
+    "lead_magnet",
+    "landing_page",
+    "manual",
+    "import",
+    "capture",
+  ]),
   status: zod.enum(["active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
@@ -599,7 +636,13 @@ export const UpdateSubscriberResponse = zod.object({
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
   language: zod.string(),
-  source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+  source: zod.enum([
+    "lead_magnet",
+    "landing_page",
+    "manual",
+    "import",
+    "capture",
+  ]),
   status: zod.enum(["active", "unsubscribed", "bounced"]),
   mailingListId: zod.number(),
   mailingListName: zod.string(),
@@ -640,6 +683,615 @@ export const ImportSubscribersResponse = zod.object({
 });
 
 /**
+ * @summary List all landing pages
+ */
+export const ListLandingPagesQueryParams = zod.object({
+  entityType: zod.enum(["author", "series", "book"]).optional(),
+  entityId: zod.coerce.number().optional(),
+  language: zod.coerce.string().optional(),
+});
+
+export const ListLandingPagesResponseItem = zod.object({
+  id: zod.number(),
+  entityType: zod.enum(["author", "series", "book"]),
+  entityId: zod.number(),
+  entityName: zod.string(),
+  language: zod.string(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  metaTitle: zod.string().nullish(),
+  metaDescription: zod.string().nullish(),
+  captureHeading: zod.string().nullish(),
+  captureSubheading: zod.string().nullish(),
+  captureButtonText: zod.string().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isPublished: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListLandingPagesResponse = zod.array(ListLandingPagesResponseItem);
+
+/**
+ * @summary Create a new landing page
+ */
+export const CreateLandingPageBody = zod.object({
+  entityType: zod.enum(["author", "series", "book"]),
+  entityId: zod.number(),
+  language: zod.string(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  metaTitle: zod.string().nullish(),
+  metaDescription: zod.string().nullish(),
+  captureHeading: zod.string().nullish(),
+  captureSubheading: zod.string().nullish(),
+  captureButtonText: zod.string().nullish(),
+  mailingListId: zod.number().nullish(),
+  isPublished: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get landing page by ID
+ */
+export const GetLandingPageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetLandingPageResponse = zod.object({
+  id: zod.number(),
+  entityType: zod.enum(["author", "series", "book"]),
+  entityId: zod.number(),
+  entityName: zod.string(),
+  language: zod.string(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  metaTitle: zod.string().nullish(),
+  metaDescription: zod.string().nullish(),
+  captureHeading: zod.string().nullish(),
+  captureSubheading: zod.string().nullish(),
+  captureButtonText: zod.string().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isPublished: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a landing page
+ */
+export const UpdateLandingPageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateLandingPageBody = zod.object({
+  language: zod.string().optional(),
+  url: zod.string().optional(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  metaTitle: zod.string().nullish(),
+  metaDescription: zod.string().nullish(),
+  captureHeading: zod.string().nullish(),
+  captureSubheading: zod.string().nullish(),
+  captureButtonText: zod.string().nullish(),
+  mailingListId: zod.number().nullish(),
+  isPublished: zod.boolean().optional(),
+});
+
+export const UpdateLandingPageResponse = zod.object({
+  id: zod.number(),
+  entityType: zod.enum(["author", "series", "book"]),
+  entityId: zod.number(),
+  entityName: zod.string(),
+  language: zod.string(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  description: zod.string().nullish(),
+  metaTitle: zod.string().nullish(),
+  metaDescription: zod.string().nullish(),
+  captureHeading: zod.string().nullish(),
+  captureSubheading: zod.string().nullish(),
+  captureButtonText: zod.string().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isPublished: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a landing page
+ */
+export const DeleteLandingPageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List all email templates
+ */
+export const ListEmailTemplatesQueryParams = zod.object({
+  language: zod.coerce.string().optional(),
+  templateType: zod
+    .enum([
+      "welcome",
+      "lead_magnet_delivery",
+      "new_release",
+      "series_update",
+      "promotional",
+      "re_engagement",
+    ])
+    .optional(),
+  mailingListId: zod.coerce.number().optional(),
+});
+
+export const ListEmailTemplatesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  subject: zod.string(),
+  bodyHtml: zod.string(),
+  bodyText: zod.string().nullish(),
+  language: zod.string(),
+  templateType: zod.enum([
+    "welcome",
+    "lead_magnet_delivery",
+    "new_release",
+    "series_update",
+    "promotional",
+    "re_engagement",
+  ]),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListEmailTemplatesResponse = zod.array(
+  ListEmailTemplatesResponseItem,
+);
+
+/**
+ * @summary Create a new email template
+ */
+export const CreateEmailTemplateBody = zod.object({
+  name: zod.string(),
+  subject: zod.string(),
+  bodyHtml: zod.string(),
+  bodyText: zod.string().nullish(),
+  language: zod.string(),
+  templateType: zod.enum([
+    "welcome",
+    "lead_magnet_delivery",
+    "new_release",
+    "series_update",
+    "promotional",
+    "re_engagement",
+  ]),
+  mailingListId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get email template by ID
+ */
+export const GetEmailTemplateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetEmailTemplateResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  subject: zod.string(),
+  bodyHtml: zod.string(),
+  bodyText: zod.string().nullish(),
+  language: zod.string(),
+  templateType: zod.enum([
+    "welcome",
+    "lead_magnet_delivery",
+    "new_release",
+    "series_update",
+    "promotional",
+    "re_engagement",
+  ]),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update an email template
+ */
+export const UpdateEmailTemplateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateEmailTemplateBody = zod.object({
+  name: zod.string().optional(),
+  subject: zod.string().optional(),
+  bodyHtml: zod.string().optional(),
+  bodyText: zod.string().nullish(),
+  language: zod.string().optional(),
+  templateType: zod
+    .enum([
+      "welcome",
+      "lead_magnet_delivery",
+      "new_release",
+      "series_update",
+      "promotional",
+      "re_engagement",
+    ])
+    .optional(),
+  mailingListId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateEmailTemplateResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  subject: zod.string(),
+  bodyHtml: zod.string(),
+  bodyText: zod.string().nullish(),
+  language: zod.string(),
+  templateType: zod.enum([
+    "welcome",
+    "lead_magnet_delivery",
+    "new_release",
+    "series_update",
+    "promotional",
+    "re_engagement",
+  ]),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an email template
+ */
+export const DeleteEmailTemplateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List all automation rules
+ */
+export const ListAutomationRulesQueryParams = zod.object({
+  mailingListId: zod.coerce.number().optional(),
+  triggerType: zod
+    .enum([
+      "new_subscriber",
+      "book_published",
+      "series_complete",
+      "subscriber_tagged",
+      "scheduled",
+    ])
+    .optional(),
+  isActive: zod.coerce.boolean().optional(),
+});
+
+export const ListAutomationRulesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  triggerType: zod.enum([
+    "new_subscriber",
+    "book_published",
+    "series_complete",
+    "subscriber_tagged",
+    "scheduled",
+  ]),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod.enum([
+    "send_email",
+    "assign_tag",
+    "move_to_list",
+    "send_lead_magnet",
+    "welcome_sequence",
+  ]),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  emailTemplateName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  executionCount: zod.number(),
+  lastExecutedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListAutomationRulesResponse = zod.array(
+  ListAutomationRulesResponseItem,
+);
+
+/**
+ * @summary Create a new automation rule
+ */
+export const CreateAutomationRuleBody = zod.object({
+  name: zod.string(),
+  description: zod.string().nullish(),
+  triggerType: zod.enum([
+    "new_subscriber",
+    "book_published",
+    "series_complete",
+    "subscriber_tagged",
+    "scheduled",
+  ]),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod.enum([
+    "send_email",
+    "assign_tag",
+    "move_to_list",
+    "send_lead_magnet",
+    "welcome_sequence",
+  ]),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get automation rule by ID
+ */
+export const GetAutomationRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetAutomationRuleResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  triggerType: zod.enum([
+    "new_subscriber",
+    "book_published",
+    "series_complete",
+    "subscriber_tagged",
+    "scheduled",
+  ]),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod.enum([
+    "send_email",
+    "assign_tag",
+    "move_to_list",
+    "send_lead_magnet",
+    "welcome_sequence",
+  ]),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  emailTemplateName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  executionCount: zod.number(),
+  lastExecutedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  recentLogs: zod.array(
+    zod.object({
+      id: zod.number(),
+      ruleId: zod.number(),
+      ruleName: zod.string(),
+      subscriberId: zod.number().nullish(),
+      subscriberEmail: zod.string().nullish(),
+      status: zod.enum(["success", "failed", "skipped"]),
+      action: zod.string(),
+      details: zod.object({}).passthrough().nullish(),
+      executedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update an automation rule
+ */
+export const UpdateAutomationRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateAutomationRuleBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().nullish(),
+  triggerType: zod
+    .enum([
+      "new_subscriber",
+      "book_published",
+      "series_complete",
+      "subscriber_tagged",
+      "scheduled",
+    ])
+    .optional(),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod
+    .enum([
+      "send_email",
+      "assign_tag",
+      "move_to_list",
+      "send_lead_magnet",
+      "welcome_sequence",
+    ])
+    .optional(),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateAutomationRuleResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  triggerType: zod.enum([
+    "new_subscriber",
+    "book_published",
+    "series_complete",
+    "subscriber_tagged",
+    "scheduled",
+  ]),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod.enum([
+    "send_email",
+    "assign_tag",
+    "move_to_list",
+    "send_lead_magnet",
+    "welcome_sequence",
+  ]),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  emailTemplateName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  executionCount: zod.number(),
+  lastExecutedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an automation rule
+ */
+export const DeleteAutomationRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Toggle automation rule active/inactive
+ */
+export const ToggleAutomationRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ToggleAutomationRuleResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  triggerType: zod.enum([
+    "new_subscriber",
+    "book_published",
+    "series_complete",
+    "subscriber_tagged",
+    "scheduled",
+  ]),
+  triggerConfig: zod.object({}).passthrough().nullish(),
+  actionType: zod.enum([
+    "send_email",
+    "assign_tag",
+    "move_to_list",
+    "send_lead_magnet",
+    "welcome_sequence",
+  ]),
+  actionConfig: zod.object({}).passthrough().nullish(),
+  mailingListId: zod.number().nullish(),
+  mailingListName: zod.string().nullish(),
+  emailTemplateId: zod.number().nullish(),
+  emailTemplateName: zod.string().nullish(),
+  isActive: zod.boolean(),
+  executionCount: zod.number(),
+  lastExecutedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Manually execute an automation rule
+ */
+export const ExecuteAutomationRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ExecuteAutomationRuleResponse = zod.object({
+  executed: zod.number(),
+  succeeded: zod.number(),
+  failed: zod.number(),
+  skipped: zod.number(),
+  logs: zod.array(
+    zod.object({
+      id: zod.number(),
+      ruleId: zod.number(),
+      ruleName: zod.string(),
+      subscriberId: zod.number().nullish(),
+      subscriberEmail: zod.string().nullish(),
+      status: zod.enum(["success", "failed", "skipped"]),
+      action: zod.string(),
+      details: zod.object({}).passthrough().nullish(),
+      executedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List automation execution logs
+ */
+export const listAutomationLogsQueryLimitDefault = 50;
+
+export const ListAutomationLogsQueryParams = zod.object({
+  ruleId: zod.coerce.number().optional(),
+  limit: zod.coerce.number().default(listAutomationLogsQueryLimitDefault),
+});
+
+export const ListAutomationLogsResponseItem = zod.object({
+  id: zod.number(),
+  ruleId: zod.number(),
+  ruleName: zod.string(),
+  subscriberId: zod.number().nullish(),
+  subscriberEmail: zod.string().nullish(),
+  status: zod.enum(["success", "failed", "skipped"]),
+  action: zod.string(),
+  details: zod.object({}).passthrough().nullish(),
+  executedAt: zod.coerce.date(),
+});
+export const ListAutomationLogsResponse = zod.array(
+  ListAutomationLogsResponseItem,
+);
+
+/**
+ * @summary Public email capture endpoint for landing pages
+ */
+export const CaptureEmailBody = zod.object({
+  email: zod.string(),
+  firstName: zod.string().nullish(),
+  lastName: zod.string().nullish(),
+  language: zod.string(),
+  mailingListId: zod.number(),
+  tags: zod.string().nullish(),
+});
+
+export const CaptureEmailResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  subscriberId: zod.number().nullish(),
+  alreadySubscribed: zod.boolean(),
+  automationsTriggered: zod.number(),
+});
+
+/**
+ * @summary Capture email via a specific landing page
+ */
+export const CaptureByLandingPageParams = zod.object({
+  landingPageId: zod.coerce.number(),
+});
+
+export const CaptureByLandingPageBody = zod.object({
+  email: zod.string(),
+  firstName: zod.string().nullish(),
+  lastName: zod.string().nullish(),
+});
+
+export const CaptureByLandingPageResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  subscriberId: zod.number().nullish(),
+  alreadySubscribed: zod.boolean(),
+  automationsTriggered: zod.number(),
+});
+
+/**
  * @summary Get subscriber and mailing list statistics
  */
 export const GetSubscriberStatsResponse = zod.object({
@@ -674,7 +1326,13 @@ export const GetSubscriberStatsResponse = zod.object({
       firstName: zod.string().nullish(),
       lastName: zod.string().nullish(),
       language: zod.string(),
-      source: zod.enum(["lead_magnet", "landing_page", "manual", "import"]),
+      source: zod.enum([
+        "lead_magnet",
+        "landing_page",
+        "manual",
+        "import",
+        "capture",
+      ]),
       status: zod.enum(["active", "unsubscribed", "bounced"]),
       mailingListId: zod.number(),
       mailingListName: zod.string(),
@@ -711,6 +1369,7 @@ export const GetDashboardSummaryResponse = zod.object({
       title: zod.string(),
       subtitle: zod.string().nullish(),
       description: zod.string().nullish(),
+      language: zod.string(),
       wordCount: zod.number().nullish(),
       funnelRole: zod.enum([
         "lead_magnet",
@@ -749,6 +1408,8 @@ export const GetDashboardSummaryResponse = zod.object({
   }),
   totalSubscribers: zod.number(),
   activeMailingLists: zod.number(),
+  activeAutomations: zod.number(),
+  totalLandingPages: zod.number(),
 });
 
 /**
@@ -759,6 +1420,7 @@ export const GetPublicationCalendarResponseItem = zod.object({
   title: zod.string(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
+  language: zod.string(),
   scheduledDate: zod.coerce.date().nullish(),
   publicationDate: zod.coerce.date().nullish(),
   status: zod.string(),
@@ -783,6 +1445,7 @@ export const GetFunnelOverviewResponse = zod.object({
           id: zod.number(),
           title: zod.string(),
           seriesName: zod.string(),
+          language: zod.string(),
           status: zod.string(),
           pricingStrategy: zod.string(),
           price: zod.number().nullish(),
@@ -799,6 +1462,7 @@ export const GetSeriesProgressResponseItem = zod.object({
   seriesId: zod.number(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
+  language: zod.string(),
   status: zod.string(),
   totalBooks: zod.number(),
   publishedBooks: zod.number(),

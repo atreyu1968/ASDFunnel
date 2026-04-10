@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -41,6 +41,7 @@ export interface Series {
   name: string;
   description?: string | null;
   genre?: string | null;
+  language: string;
   status: SeriesStatus;
   displayOrder: number;
   crossoverFromSeriesId?: number | null;
@@ -105,6 +106,7 @@ export interface Book {
   title: string;
   subtitle?: string | null;
   description?: string | null;
+  language: string;
   wordCount?: number | null;
   funnelRole: BookFunnelRole;
   pricingStrategy: BookPricingStrategy;
@@ -128,6 +130,7 @@ export interface SeriesWithBooks {
   name: string;
   description?: string | null;
   genre?: string | null;
+  language: string;
   status: SeriesWithBooksStatus;
   displayOrder: number;
   crossoverFromSeriesId?: number | null;
@@ -151,6 +154,7 @@ export interface CreateSeriesBody {
   name: string;
   description?: string | null;
   genre?: string | null;
+  language?: string;
   status?: CreateSeriesBodyStatus;
   displayOrder?: number;
   crossoverFromSeriesId?: number | null;
@@ -202,6 +206,7 @@ export interface CreateBookBody {
   title: string;
   subtitle?: string | null;
   description?: string | null;
+  language?: string;
   wordCount?: number | null;
   funnelRole: CreateBookBodyFunnelRole;
   pricingStrategy: CreateBookBodyPricingStrategy;
@@ -261,6 +266,7 @@ export interface UpdateBookBody {
   title?: string;
   subtitle?: string | null;
   description?: string | null;
+  language?: string;
   wordCount?: number | null;
   funnelRole?: UpdateBookBodyFunnelRole;
   pricingStrategy?: UpdateBookBodyPricingStrategy;
@@ -273,6 +279,381 @@ export interface UpdateBookBody {
   asin?: string | null;
   isbn?: string | null;
   crossoverToSeriesId?: number | null;
+}
+
+export type LandingPageEntityType =
+  (typeof LandingPageEntityType)[keyof typeof LandingPageEntityType];
+
+export const LandingPageEntityType = {
+  author: "author",
+  series: "series",
+  book: "book",
+} as const;
+
+export interface LandingPage {
+  id: number;
+  entityType: LandingPageEntityType;
+  entityId: number;
+  entityName: string;
+  language: string;
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  captureHeading?: string | null;
+  captureSubheading?: string | null;
+  captureButtonText?: string | null;
+  mailingListId?: number | null;
+  mailingListName?: string | null;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateLandingPageBodyEntityType =
+  (typeof CreateLandingPageBodyEntityType)[keyof typeof CreateLandingPageBodyEntityType];
+
+export const CreateLandingPageBodyEntityType = {
+  author: "author",
+  series: "series",
+  book: "book",
+} as const;
+
+export interface CreateLandingPageBody {
+  entityType: CreateLandingPageBodyEntityType;
+  entityId: number;
+  language: string;
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  captureHeading?: string | null;
+  captureSubheading?: string | null;
+  captureButtonText?: string | null;
+  mailingListId?: number | null;
+  isPublished?: boolean;
+}
+
+export interface UpdateLandingPageBody {
+  language?: string;
+  url?: string;
+  title?: string | null;
+  description?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  captureHeading?: string | null;
+  captureSubheading?: string | null;
+  captureButtonText?: string | null;
+  mailingListId?: number | null;
+  isPublished?: boolean;
+}
+
+export type EmailTemplateTemplateType =
+  (typeof EmailTemplateTemplateType)[keyof typeof EmailTemplateTemplateType];
+
+export const EmailTemplateTemplateType = {
+  welcome: "welcome",
+  lead_magnet_delivery: "lead_magnet_delivery",
+  new_release: "new_release",
+  series_update: "series_update",
+  promotional: "promotional",
+  re_engagement: "re_engagement",
+} as const;
+
+export interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string | null;
+  language: string;
+  templateType: EmailTemplateTemplateType;
+  mailingListId?: number | null;
+  mailingListName?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateEmailTemplateBodyTemplateType =
+  (typeof CreateEmailTemplateBodyTemplateType)[keyof typeof CreateEmailTemplateBodyTemplateType];
+
+export const CreateEmailTemplateBodyTemplateType = {
+  welcome: "welcome",
+  lead_magnet_delivery: "lead_magnet_delivery",
+  new_release: "new_release",
+  series_update: "series_update",
+  promotional: "promotional",
+  re_engagement: "re_engagement",
+} as const;
+
+export interface CreateEmailTemplateBody {
+  name: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string | null;
+  language: string;
+  templateType: CreateEmailTemplateBodyTemplateType;
+  mailingListId?: number | null;
+  isActive?: boolean;
+}
+
+export type UpdateEmailTemplateBodyTemplateType =
+  (typeof UpdateEmailTemplateBodyTemplateType)[keyof typeof UpdateEmailTemplateBodyTemplateType];
+
+export const UpdateEmailTemplateBodyTemplateType = {
+  welcome: "welcome",
+  lead_magnet_delivery: "lead_magnet_delivery",
+  new_release: "new_release",
+  series_update: "series_update",
+  promotional: "promotional",
+  re_engagement: "re_engagement",
+} as const;
+
+export interface UpdateEmailTemplateBody {
+  name?: string;
+  subject?: string;
+  bodyHtml?: string;
+  bodyText?: string | null;
+  language?: string;
+  templateType?: UpdateEmailTemplateBodyTemplateType;
+  mailingListId?: number | null;
+  isActive?: boolean;
+}
+
+export type AutomationRuleTriggerType =
+  (typeof AutomationRuleTriggerType)[keyof typeof AutomationRuleTriggerType];
+
+export const AutomationRuleTriggerType = {
+  new_subscriber: "new_subscriber",
+  book_published: "book_published",
+  series_complete: "series_complete",
+  subscriber_tagged: "subscriber_tagged",
+  scheduled: "scheduled",
+} as const;
+
+export type AutomationRuleTriggerConfig = { [key: string]: unknown } | null;
+
+export type AutomationRuleActionType =
+  (typeof AutomationRuleActionType)[keyof typeof AutomationRuleActionType];
+
+export const AutomationRuleActionType = {
+  send_email: "send_email",
+  assign_tag: "assign_tag",
+  move_to_list: "move_to_list",
+  send_lead_magnet: "send_lead_magnet",
+  welcome_sequence: "welcome_sequence",
+} as const;
+
+export type AutomationRuleActionConfig = { [key: string]: unknown } | null;
+
+export interface AutomationRule {
+  id: number;
+  name: string;
+  description?: string | null;
+  triggerType: AutomationRuleTriggerType;
+  triggerConfig?: AutomationRuleTriggerConfig;
+  actionType: AutomationRuleActionType;
+  actionConfig?: AutomationRuleActionConfig;
+  mailingListId?: number | null;
+  mailingListName?: string | null;
+  emailTemplateId?: number | null;
+  emailTemplateName?: string | null;
+  isActive: boolean;
+  executionCount: number;
+  lastExecutedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AutomationRuleWithLogsTriggerType =
+  (typeof AutomationRuleWithLogsTriggerType)[keyof typeof AutomationRuleWithLogsTriggerType];
+
+export const AutomationRuleWithLogsTriggerType = {
+  new_subscriber: "new_subscriber",
+  book_published: "book_published",
+  series_complete: "series_complete",
+  subscriber_tagged: "subscriber_tagged",
+  scheduled: "scheduled",
+} as const;
+
+export type AutomationRuleWithLogsTriggerConfig = {
+  [key: string]: unknown;
+} | null;
+
+export type AutomationRuleWithLogsActionType =
+  (typeof AutomationRuleWithLogsActionType)[keyof typeof AutomationRuleWithLogsActionType];
+
+export const AutomationRuleWithLogsActionType = {
+  send_email: "send_email",
+  assign_tag: "assign_tag",
+  move_to_list: "move_to_list",
+  send_lead_magnet: "send_lead_magnet",
+  welcome_sequence: "welcome_sequence",
+} as const;
+
+export type AutomationRuleWithLogsActionConfig = {
+  [key: string]: unknown;
+} | null;
+
+export type AutomationLogStatus =
+  (typeof AutomationLogStatus)[keyof typeof AutomationLogStatus];
+
+export const AutomationLogStatus = {
+  success: "success",
+  failed: "failed",
+  skipped: "skipped",
+} as const;
+
+export type AutomationLogDetails = { [key: string]: unknown } | null;
+
+export interface AutomationLog {
+  id: number;
+  ruleId: number;
+  ruleName: string;
+  subscriberId?: number | null;
+  subscriberEmail?: string | null;
+  status: AutomationLogStatus;
+  action: string;
+  details?: AutomationLogDetails;
+  executedAt: string;
+}
+
+export interface AutomationRuleWithLogs {
+  id: number;
+  name: string;
+  description?: string | null;
+  triggerType: AutomationRuleWithLogsTriggerType;
+  triggerConfig?: AutomationRuleWithLogsTriggerConfig;
+  actionType: AutomationRuleWithLogsActionType;
+  actionConfig?: AutomationRuleWithLogsActionConfig;
+  mailingListId?: number | null;
+  mailingListName?: string | null;
+  emailTemplateId?: number | null;
+  emailTemplateName?: string | null;
+  isActive: boolean;
+  executionCount: number;
+  lastExecutedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  recentLogs: AutomationLog[];
+}
+
+export type CreateAutomationRuleBodyTriggerType =
+  (typeof CreateAutomationRuleBodyTriggerType)[keyof typeof CreateAutomationRuleBodyTriggerType];
+
+export const CreateAutomationRuleBodyTriggerType = {
+  new_subscriber: "new_subscriber",
+  book_published: "book_published",
+  series_complete: "series_complete",
+  subscriber_tagged: "subscriber_tagged",
+  scheduled: "scheduled",
+} as const;
+
+export type CreateAutomationRuleBodyTriggerConfig = {
+  [key: string]: unknown;
+} | null;
+
+export type CreateAutomationRuleBodyActionType =
+  (typeof CreateAutomationRuleBodyActionType)[keyof typeof CreateAutomationRuleBodyActionType];
+
+export const CreateAutomationRuleBodyActionType = {
+  send_email: "send_email",
+  assign_tag: "assign_tag",
+  move_to_list: "move_to_list",
+  send_lead_magnet: "send_lead_magnet",
+  welcome_sequence: "welcome_sequence",
+} as const;
+
+export type CreateAutomationRuleBodyActionConfig = {
+  [key: string]: unknown;
+} | null;
+
+export interface CreateAutomationRuleBody {
+  name: string;
+  description?: string | null;
+  triggerType: CreateAutomationRuleBodyTriggerType;
+  triggerConfig?: CreateAutomationRuleBodyTriggerConfig;
+  actionType: CreateAutomationRuleBodyActionType;
+  actionConfig?: CreateAutomationRuleBodyActionConfig;
+  mailingListId?: number | null;
+  emailTemplateId?: number | null;
+  isActive?: boolean;
+}
+
+export type UpdateAutomationRuleBodyTriggerType =
+  (typeof UpdateAutomationRuleBodyTriggerType)[keyof typeof UpdateAutomationRuleBodyTriggerType];
+
+export const UpdateAutomationRuleBodyTriggerType = {
+  new_subscriber: "new_subscriber",
+  book_published: "book_published",
+  series_complete: "series_complete",
+  subscriber_tagged: "subscriber_tagged",
+  scheduled: "scheduled",
+} as const;
+
+export type UpdateAutomationRuleBodyTriggerConfig = {
+  [key: string]: unknown;
+} | null;
+
+export type UpdateAutomationRuleBodyActionType =
+  (typeof UpdateAutomationRuleBodyActionType)[keyof typeof UpdateAutomationRuleBodyActionType];
+
+export const UpdateAutomationRuleBodyActionType = {
+  send_email: "send_email",
+  assign_tag: "assign_tag",
+  move_to_list: "move_to_list",
+  send_lead_magnet: "send_lead_magnet",
+  welcome_sequence: "welcome_sequence",
+} as const;
+
+export type UpdateAutomationRuleBodyActionConfig = {
+  [key: string]: unknown;
+} | null;
+
+export interface UpdateAutomationRuleBody {
+  name?: string;
+  description?: string | null;
+  triggerType?: UpdateAutomationRuleBodyTriggerType;
+  triggerConfig?: UpdateAutomationRuleBodyTriggerConfig;
+  actionType?: UpdateAutomationRuleBodyActionType;
+  actionConfig?: UpdateAutomationRuleBodyActionConfig;
+  mailingListId?: number | null;
+  emailTemplateId?: number | null;
+  isActive?: boolean;
+}
+
+export interface AutomationExecutionResult {
+  executed: number;
+  succeeded: number;
+  failed: number;
+  skipped: number;
+  logs: AutomationLog[];
+}
+
+export interface CaptureEmailBody {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  language: string;
+  mailingListId: number;
+  tags?: string | null;
+}
+
+export interface CaptureByLandingPageBody {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+export interface CaptureEmailResult {
+  success: boolean;
+  message: string;
+  subscriberId?: number | null;
+  alreadySubscribed: boolean;
+  automationsTriggered: number;
 }
 
 export type DashboardSummaryBooksByFunnelRole = {
@@ -294,6 +675,8 @@ export interface DashboardSummary {
   booksByFunnelRole: DashboardSummaryBooksByFunnelRole;
   totalSubscribers: number;
   activeMailingLists: number;
+  activeAutomations: number;
+  totalLandingPages: number;
 }
 
 export interface CalendarEntry {
@@ -301,6 +684,7 @@ export interface CalendarEntry {
   title: string;
   seriesName: string;
   authorPenName: string;
+  language: string;
   scheduledDate?: string | null;
   publicationDate?: string | null;
   status: string;
@@ -312,6 +696,7 @@ export type FunnelOverviewStagesItemBooksItem = {
   id: number;
   title: string;
   seriesName: string;
+  language: string;
   status: string;
   pricingStrategy: string;
   price?: number | null;
@@ -332,6 +717,7 @@ export interface SeriesProgress {
   seriesId: number;
   seriesName: string;
   authorPenName: string;
+  language: string;
   status: string;
   totalBooks: number;
   publishedBooks: number;
@@ -374,6 +760,7 @@ export const SubscriberSource = {
   landing_page: "landing_page",
   manual: "manual",
   import: "import",
+  capture: "capture",
 } as const;
 
 export type SubscriberStatus =
@@ -435,6 +822,7 @@ export const CreateSubscriberBodySource = {
   landing_page: "landing_page",
   manual: "manual",
   import: "import",
+  capture: "capture",
 } as const;
 
 export interface CreateSubscriberBody {
@@ -521,12 +909,14 @@ export interface SubscriberStats {
 
 export type ListSeriesParams = {
   authorId?: number;
+  language?: string;
 };
 
 export type ListBooksParams = {
   seriesId?: number;
   status?: ListBooksStatus;
   funnelRole?: ListBooksFunnelRole;
+  language?: string;
 };
 
 export type ListBooksStatus =
@@ -579,4 +969,60 @@ export const ListSubscribersSource = {
   landing_page: "landing_page",
   manual: "manual",
   import: "import",
+  capture: "capture",
 } as const;
+
+export type ListLandingPagesParams = {
+  entityType?: ListLandingPagesEntityType;
+  entityId?: number;
+  language?: string;
+};
+
+export type ListLandingPagesEntityType =
+  (typeof ListLandingPagesEntityType)[keyof typeof ListLandingPagesEntityType];
+
+export const ListLandingPagesEntityType = {
+  author: "author",
+  series: "series",
+  book: "book",
+} as const;
+
+export type ListEmailTemplatesParams = {
+  language?: string;
+  templateType?: ListEmailTemplatesTemplateType;
+  mailingListId?: number;
+};
+
+export type ListEmailTemplatesTemplateType =
+  (typeof ListEmailTemplatesTemplateType)[keyof typeof ListEmailTemplatesTemplateType];
+
+export const ListEmailTemplatesTemplateType = {
+  welcome: "welcome",
+  lead_magnet_delivery: "lead_magnet_delivery",
+  new_release: "new_release",
+  series_update: "series_update",
+  promotional: "promotional",
+  re_engagement: "re_engagement",
+} as const;
+
+export type ListAutomationRulesParams = {
+  mailingListId?: number;
+  triggerType?: ListAutomationRulesTriggerType;
+  isActive?: boolean;
+};
+
+export type ListAutomationRulesTriggerType =
+  (typeof ListAutomationRulesTriggerType)[keyof typeof ListAutomationRulesTriggerType];
+
+export const ListAutomationRulesTriggerType = {
+  new_subscriber: "new_subscriber",
+  book_published: "book_published",
+  series_complete: "series_complete",
+  subscriber_tagged: "subscriber_tagged",
+  scheduled: "scheduled",
+} as const;
+
+export type ListAutomationLogsParams = {
+  ruleId?: number;
+  limit?: number;
+};

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
 export interface CalendarEntry {
@@ -11,6 +11,7 @@ export interface CalendarEntry {
   title: string;
   seriesName: string;
   authorPenName: string;
+  language: string;
   scheduledDate?: Date | null;
   publicationDate?: Date | null;
   status: string;

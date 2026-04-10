@@ -82,7 +82,7 @@ const sourceLabels: Record<string, string> = {
   lead_magnet: "Lead Magnet",
   landing_page: "Landing Page",
   manual: "Manual",
-  import: "Importacion",
+  import: "Importación",
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
@@ -180,7 +180,7 @@ export default function Subscribers() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Suscriptores</h2>
-          <p className="text-muted-foreground">Gestion de la base de datos de emails captados.</p>
+          <p className="text-muted-foreground">Gestión de la base de datos de emails captados.</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
           setIsCreateOpen(open);
@@ -270,10 +270,12 @@ export default function Subscribers() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="es">Espanol</SelectItem>
+                            <SelectItem value="es">Español</SelectItem>
                             <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="fr">Francais</SelectItem>
+                            <SelectItem value="fr">Français</SelectItem>
                             <SelectItem value="de">Deutsch</SelectItem>
+                            <SelectItem value="pt">Português</SelectItem>
+                            <SelectItem value="it">Italiano</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -297,7 +299,7 @@ export default function Subscribers() {
                           <SelectItem value="manual">Manual</SelectItem>
                           <SelectItem value="lead_magnet">Lead Magnet</SelectItem>
                           <SelectItem value="landing_page">Landing Page</SelectItem>
-                          <SelectItem value="import">Importacion</SelectItem>
+                          <SelectItem value="import">Importación</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -417,7 +419,7 @@ export default function Subscribers() {
             <SelectItem value="lead_magnet">Lead Magnet</SelectItem>
             <SelectItem value="landing_page">Landing Page</SelectItem>
             <SelectItem value="manual">Manual</SelectItem>
-            <SelectItem value="import">Importacion</SelectItem>
+            <SelectItem value="import">Importación</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -488,8 +490,8 @@ export default function Subscribers() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Eliminar suscriptor?</AlertDialogTitle>
-                                <AlertDialogDescription>Se eliminara permanentemente {sub.email}.</AlertDialogDescription>
+                                <AlertDialogTitle>¿Eliminar suscriptor?</AlertDialogTitle>
+                                <AlertDialogDescription>Se eliminará permanentemente {sub.email}.</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: Lennox Hale Publishing Management API
 servers:
   - url: /api
@@ -22,6 +22,14 @@ tags:
     description: Email subscriber management
   - name: dashboard
     description: Dashboard and analytics
+  - name: landing-pages
+    description: Multi-language landing page management
+  - name: email-templates
+    description: Email template management
+  - name: automations
+    description: Automation rules and execution
+  - name: capture
+    description: Public email capture endpoints
 paths:
   /healthz:
     get:
@@ -138,6 +146,11 @@ paths:
           required: false
           schema:
             type: integer
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: List of series
@@ -246,6 +259,11 @@ paths:
           schema:
             type: string
             enum: [lead_magnet, traffic_entry, core_offer, crossover_bridge]
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: List of books
@@ -454,7 +472,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [lead_magnet, landing_page, manual, import]
+            enum: [lead_magnet, landing_page, manual, import, capture]
         - name: language
           in: query
           required: false
@@ -563,6 +581,438 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportSubscribersResult"
 
+  # ── Landing Pages ──
+  /landing-pages:
+    get:
+      operationId: listLandingPages
+      tags: [landing-pages]
+      summary: List all landing pages
+      parameters:
+        - name: entityType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [author, series, book]
+        - name: entityId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of landing pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LandingPage"
+    post:
+      operationId: createLandingPage
+      tags: [landing-pages]
+      summary: Create a new landing page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLandingPageBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingPage"
+
+  /landing-pages/{id}:
+    get:
+      operationId: getLandingPage
+      tags: [landing-pages]
+      summary: Get landing page by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Landing page details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingPage"
+        "404":
+          description: Not found
+    put:
+      operationId: updateLandingPage
+      tags: [landing-pages]
+      summary: Update a landing page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLandingPageBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingPage"
+    delete:
+      operationId: deleteLandingPage
+      tags: [landing-pages]
+      summary: Delete a landing page
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Email Templates ──
+  /email-templates:
+    get:
+      operationId: listEmailTemplates
+      tags: [email-templates]
+      summary: List all email templates
+      parameters:
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: templateType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+        - name: mailingListId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of email templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailTemplate"
+    post:
+      operationId: createEmailTemplate
+      tags: [email-templates]
+      summary: Create a new email template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmailTemplateBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+
+  /email-templates/{id}:
+    get:
+      operationId: getEmailTemplate
+      tags: [email-templates]
+      summary: Get email template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Email template details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        "404":
+          description: Not found
+    put:
+      operationId: updateEmailTemplate
+      tags: [email-templates]
+      summary: Update an email template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmailTemplateBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+    delete:
+      operationId: deleteEmailTemplate
+      tags: [email-templates]
+      summary: Delete an email template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Automation Rules ──
+  /automation-rules:
+    get:
+      operationId: listAutomationRules
+      tags: [automations]
+      summary: List all automation rules
+      parameters:
+        - name: mailingListId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: triggerType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [new_subscriber, book_published, series_complete, subscriber_tagged, scheduled]
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of automation rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AutomationRule"
+    post:
+      operationId: createAutomationRule
+      tags: [automations]
+      summary: Create a new automation rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAutomationRuleBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRule"
+
+  /automation-rules/{id}:
+    get:
+      operationId: getAutomationRule
+      tags: [automations]
+      summary: Get automation rule by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Automation rule details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRuleWithLogs"
+        "404":
+          description: Not found
+    put:
+      operationId: updateAutomationRule
+      tags: [automations]
+      summary: Update an automation rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAutomationRuleBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRule"
+    delete:
+      operationId: deleteAutomationRule
+      tags: [automations]
+      summary: Delete an automation rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /automation-rules/{id}/toggle:
+    post:
+      operationId: toggleAutomationRule
+      tags: [automations]
+      summary: Toggle automation rule active/inactive
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRule"
+
+  /automation-rules/{id}/execute:
+    post:
+      operationId: executeAutomationRule
+      tags: [automations]
+      summary: Manually execute an automation rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationExecutionResult"
+
+  /automation-logs:
+    get:
+      operationId: listAutomationLogs
+      tags: [automations]
+      summary: List automation execution logs
+      parameters:
+        - name: ruleId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of automation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AutomationLog"
+
+  # ── Public Capture ──
+  /capture:
+    post:
+      operationId: captureEmail
+      tags: [capture]
+      summary: Public email capture endpoint for landing pages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaptureEmailBody"
+      responses:
+        "200":
+          description: Capture result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureEmailResult"
+
+  /capture/by-landing-page/{landingPageId}:
+    post:
+      operationId: captureByLandingPage
+      tags: [capture]
+      summary: Capture email via a specific landing page
+      parameters:
+        - name: landingPageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaptureByLandingPageBody"
+      responses:
+        "200":
+          description: Capture result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureEmailResult"
+
+  # ── Dashboard / Analytics ──
   /dashboard/subscriber-stats:
     get:
       operationId: getSubscriberStats
@@ -576,7 +1026,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/SubscriberStats"
 
-  # ── Dashboard / Analytics ──
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -716,6 +1165,8 @@ components:
         genre:
           type: string
           nullable: true
+        language:
+          type: string
         status:
           type: string
           enum: [active, planned, completed]
@@ -734,7 +1185,7 @@ components:
           format: date-time
         bookCount:
           type: integer
-      required: [id, authorId, name, status, displayOrder, authorPenName, createdAt, bookCount]
+      required: [id, authorId, name, language, status, displayOrder, authorPenName, createdAt, bookCount]
 
     SeriesWithBooks:
       type: object
@@ -751,6 +1202,8 @@ components:
         genre:
           type: string
           nullable: true
+        language:
+          type: string
         status:
           type: string
           enum: [active, planned, completed]
@@ -771,7 +1224,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Book"
-      required: [id, authorId, name, status, displayOrder, authorPenName, createdAt, books]
+      required: [id, authorId, name, language, status, displayOrder, authorPenName, createdAt, books]
 
     CreateSeriesBody:
       type: object
@@ -786,6 +1239,8 @@ components:
         genre:
           type: string
           nullable: true
+        language:
+          type: string
         status:
           type: string
           enum: [active, planned, completed]
@@ -813,6 +1268,8 @@ components:
         description:
           type: string
           nullable: true
+        language:
+          type: string
         wordCount:
           type: integer
           nullable: true
@@ -859,7 +1316,7 @@ components:
         createdAt:
           type: string
           format: date-time
-      required: [id, seriesId, bookNumber, title, funnelRole, pricingStrategy, status, seriesName, authorPenName, createdAt]
+      required: [id, seriesId, bookNumber, title, language, funnelRole, pricingStrategy, status, seriesName, authorPenName, createdAt]
 
     CreateBookBody:
       type: object
@@ -876,6 +1333,8 @@ components:
         description:
           type: string
           nullable: true
+        language:
+          type: string
         wordCount:
           type: integer
           nullable: true
@@ -930,6 +1389,8 @@ components:
         description:
           type: string
           nullable: true
+        language:
+          type: string
         wordCount:
           type: integer
           nullable: true
@@ -970,6 +1431,477 @@ components:
           type: integer
           nullable: true
 
+    # ── Landing Pages ──
+    LandingPage:
+      type: object
+      properties:
+        id:
+          type: integer
+        entityType:
+          type: string
+          enum: [author, series, book]
+        entityId:
+          type: integer
+        entityName:
+          type: string
+        language:
+          type: string
+        url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        metaTitle:
+          type: string
+          nullable: true
+        metaDescription:
+          type: string
+          nullable: true
+        captureHeading:
+          type: string
+          nullable: true
+        captureSubheading:
+          type: string
+          nullable: true
+        captureButtonText:
+          type: string
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        mailingListName:
+          type: string
+          nullable: true
+        isPublished:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, entityType, entityId, entityName, language, url, isPublished, createdAt, updatedAt]
+
+    CreateLandingPageBody:
+      type: object
+      properties:
+        entityType:
+          type: string
+          enum: [author, series, book]
+        entityId:
+          type: integer
+        language:
+          type: string
+        url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        metaTitle:
+          type: string
+          nullable: true
+        metaDescription:
+          type: string
+          nullable: true
+        captureHeading:
+          type: string
+          nullable: true
+        captureSubheading:
+          type: string
+          nullable: true
+        captureButtonText:
+          type: string
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+      required: [entityType, entityId, language, url]
+
+    UpdateLandingPageBody:
+      type: object
+      properties:
+        language:
+          type: string
+        url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        metaTitle:
+          type: string
+          nullable: true
+        metaDescription:
+          type: string
+          nullable: true
+        captureHeading:
+          type: string
+          nullable: true
+        captureSubheading:
+          type: string
+          nullable: true
+        captureButtonText:
+          type: string
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+
+    # ── Email Templates ──
+    EmailTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        subject:
+          type: string
+        bodyHtml:
+          type: string
+        bodyText:
+          type: string
+          nullable: true
+        language:
+          type: string
+        templateType:
+          type: string
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+        mailingListId:
+          type: integer
+          nullable: true
+        mailingListName:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, subject, bodyHtml, language, templateType, isActive, createdAt, updatedAt]
+
+    CreateEmailTemplateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        bodyHtml:
+          type: string
+        bodyText:
+          type: string
+          nullable: true
+        language:
+          type: string
+        templateType:
+          type: string
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+        mailingListId:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+      required: [name, subject, bodyHtml, language, templateType]
+
+    UpdateEmailTemplateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        bodyHtml:
+          type: string
+        bodyText:
+          type: string
+          nullable: true
+        language:
+          type: string
+        templateType:
+          type: string
+          enum: [welcome, lead_magnet_delivery, new_release, series_update, promotional, re_engagement]
+        mailingListId:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+
+    # ── Automation Rules ──
+    AutomationRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        triggerType:
+          type: string
+          enum: [new_subscriber, book_published, series_complete, subscriber_tagged, scheduled]
+        triggerConfig:
+          type: object
+          nullable: true
+        actionType:
+          type: string
+          enum: [send_email, assign_tag, move_to_list, send_lead_magnet, welcome_sequence]
+        actionConfig:
+          type: object
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        mailingListName:
+          type: string
+          nullable: true
+        emailTemplateId:
+          type: integer
+          nullable: true
+        emailTemplateName:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        executionCount:
+          type: integer
+        lastExecutedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, triggerType, actionType, isActive, executionCount, createdAt, updatedAt]
+
+    AutomationRuleWithLogs:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        triggerType:
+          type: string
+          enum: [new_subscriber, book_published, series_complete, subscriber_tagged, scheduled]
+        triggerConfig:
+          type: object
+          nullable: true
+        actionType:
+          type: string
+          enum: [send_email, assign_tag, move_to_list, send_lead_magnet, welcome_sequence]
+        actionConfig:
+          type: object
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        mailingListName:
+          type: string
+          nullable: true
+        emailTemplateId:
+          type: integer
+          nullable: true
+        emailTemplateName:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        executionCount:
+          type: integer
+        lastExecutedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        recentLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AutomationLog"
+      required: [id, name, triggerType, actionType, isActive, executionCount, createdAt, updatedAt, recentLogs]
+
+    CreateAutomationRuleBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        triggerType:
+          type: string
+          enum: [new_subscriber, book_published, series_complete, subscriber_tagged, scheduled]
+        triggerConfig:
+          type: object
+          nullable: true
+        actionType:
+          type: string
+          enum: [send_email, assign_tag, move_to_list, send_lead_magnet, welcome_sequence]
+        actionConfig:
+          type: object
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        emailTemplateId:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+      required: [name, triggerType, actionType]
+
+    UpdateAutomationRuleBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        triggerType:
+          type: string
+          enum: [new_subscriber, book_published, series_complete, subscriber_tagged, scheduled]
+        triggerConfig:
+          type: object
+          nullable: true
+        actionType:
+          type: string
+          enum: [send_email, assign_tag, move_to_list, send_lead_magnet, welcome_sequence]
+        actionConfig:
+          type: object
+          nullable: true
+        mailingListId:
+          type: integer
+          nullable: true
+        emailTemplateId:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+
+    AutomationLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        ruleId:
+          type: integer
+        ruleName:
+          type: string
+        subscriberId:
+          type: integer
+          nullable: true
+        subscriberEmail:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [success, failed, skipped]
+        action:
+          type: string
+        details:
+          type: object
+          nullable: true
+        executedAt:
+          type: string
+          format: date-time
+      required: [id, ruleId, ruleName, status, action, executedAt]
+
+    AutomationExecutionResult:
+      type: object
+      properties:
+        executed:
+          type: integer
+        succeeded:
+          type: integer
+        failed:
+          type: integer
+        skipped:
+          type: integer
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AutomationLog"
+      required: [executed, succeeded, failed, skipped, logs]
+
+    # ── Capture ──
+    CaptureEmailBody:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        language:
+          type: string
+        mailingListId:
+          type: integer
+        tags:
+          type: string
+          nullable: true
+      required: [email, language, mailingListId]
+
+    CaptureByLandingPageBody:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      required: [email]
+
+    CaptureEmailResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        subscriberId:
+          type: integer
+          nullable: true
+        alreadySubscribed:
+          type: boolean
+        automationsTriggered:
+          type: integer
+      required: [success, message, alreadySubscribed, automationsTriggered]
+
+    # ── Dashboard ──
     DashboardSummary:
       type: object
       properties:
@@ -1006,7 +1938,11 @@ components:
           type: integer
         activeMailingLists:
           type: integer
-      required: [totalAuthors, totalSeries, totalBooks, publishedBooks, scheduledBooks, inProductionBooks, draftBooks, booksByFunnelRole, totalSubscribers, activeMailingLists]
+        activeAutomations:
+          type: integer
+        totalLandingPages:
+          type: integer
+      required: [totalAuthors, totalSeries, totalBooks, publishedBooks, scheduledBooks, inProductionBooks, draftBooks, booksByFunnelRole, totalSubscribers, activeMailingLists, activeAutomations, totalLandingPages]
 
     CalendarEntry:
       type: object
@@ -1018,6 +1954,8 @@ components:
         seriesName:
           type: string
         authorPenName:
+          type: string
+        language:
           type: string
         scheduledDate:
           type: string
@@ -1033,7 +1971,7 @@ components:
           type: string
         bookNumber:
           type: integer
-      required: [bookId, title, seriesName, authorPenName, status, funnelRole, bookNumber]
+      required: [bookId, title, seriesName, authorPenName, language, status, funnelRole, bookNumber]
 
     FunnelOverview:
       type: object
@@ -1060,6 +1998,8 @@ components:
                       type: string
                     seriesName:
                       type: string
+                    language:
+                      type: string
                     status:
                       type: string
                     pricingStrategy:
@@ -1067,7 +2007,7 @@ components:
                     price:
                       type: number
                       nullable: true
-                  required: [id, title, seriesName, status, pricingStrategy]
+                  required: [id, title, seriesName, language, status, pricingStrategy]
             required: [role, label, count, books]
       required: [stages]
 
@@ -1079,6 +2019,8 @@ components:
         seriesName:
           type: string
         authorPenName:
+          type: string
+        language:
           type: string
         status:
           type: string
@@ -1097,7 +2039,7 @@ components:
         crossoverToSeriesName:
           type: string
           nullable: true
-      required: [seriesId, seriesName, authorPenName, status, totalBooks, publishedBooks, scheduledBooks, draftBooks, progressPercent, hasCrossover]
+      required: [seriesId, seriesName, authorPenName, language, status, totalBooks, publishedBooks, scheduledBooks, draftBooks, progressPercent, hasCrossover]
 
     ActivityEntry:
       type: object
@@ -1228,7 +2170,7 @@ components:
           type: string
         source:
           type: string
-          enum: [lead_magnet, landing_page, manual, import]
+          enum: [lead_magnet, landing_page, manual, import, capture]
         status:
           type: string
           enum: [active, unsubscribed, bounced]
@@ -1265,7 +2207,7 @@ components:
           type: string
         source:
           type: string
-          enum: [lead_magnet, landing_page, manual, import]
+          enum: [lead_magnet, landing_page, manual, import, capture]
         mailingListId:
           type: integer
         tags:

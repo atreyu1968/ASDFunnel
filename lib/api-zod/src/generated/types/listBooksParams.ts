@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import type { ListBooksFunnelRole } from "./listBooksFunnelRole";
 import type { ListBooksStatus } from "./listBooksStatus";
@@ -12,4 +12,5 @@ export type ListBooksParams = {
   seriesId?: number;
   status?: ListBooksStatus;
   funnelRole?: ListBooksFunnelRole;
+  language?: string;
 };

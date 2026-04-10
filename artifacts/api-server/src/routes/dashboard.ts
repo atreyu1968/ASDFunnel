@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, sql, desc, asc } from "drizzle-orm";
-import { db, authorsTable, seriesTable, booksTable, activityTable, mailingListsTable, subscribersTable } from "@workspace/db";
+import { db, authorsTable, seriesTable, booksTable, activityTable, mailingListsTable, subscribersTable, automationRulesTable, landingPagesTable } from "@workspace/db";
 import {
   GetDashboardSummaryResponse,
   GetPublicationCalendarResponse,
@@ -28,6 +28,8 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
 
   const [subscriberCount] = await db.select({ count: sql<number>`count(*)::int` }).from(subscribersTable).where(eq(subscribersTable.status, "active"));
   const [activeListCount] = await db.select({ count: sql<number>`count(*)::int` }).from(mailingListsTable).where(eq(mailingListsTable.isActive, true));
+  const [activeAutomationsCount] = await db.select({ count: sql<number>`count(*)::int` }).from(automationRulesTable).where(eq(automationRulesTable.isActive, true));
+  const [landingPageCount] = await db.select({ count: sql<number>`count(*)::int` }).from(landingPagesTable);
 
   const nextReleaseBooks = await db
     .select({
@@ -37,6 +39,7 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
       title: booksTable.title,
       subtitle: booksTable.subtitle,
       description: booksTable.description,
+      language: booksTable.language,
       wordCount: booksTable.wordCount,
       funnelRole: booksTable.funnelRole,
       pricingStrategy: booksTable.pricingStrategy,
@@ -77,6 +80,8 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
     },
     totalSubscribers: subscriberCount.count,
     activeMailingLists: activeListCount.count,
+    activeAutomations: activeAutomationsCount.count,
+    totalLandingPages: landingPageCount.count,
   }));
 });
 
@@ -137,6 +142,7 @@ router.get("/dashboard/series-progress", async (_req, res): Promise<void> => {
       seriesId: seriesTable.id,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
+      language: seriesTable.language,
       status: seriesTable.status,
     })
     .from(seriesTable)

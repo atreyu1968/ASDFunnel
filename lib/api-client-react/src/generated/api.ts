@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -19,19 +19,35 @@ import type {
 import type {
   ActivityEntry,
   Author,
+  AutomationExecutionResult,
+  AutomationLog,
+  AutomationRule,
+  AutomationRuleWithLogs,
   Book,
   CalendarEntry,
+  CaptureByLandingPageBody,
+  CaptureEmailBody,
+  CaptureEmailResult,
   CreateAuthorBody,
+  CreateAutomationRuleBody,
   CreateBookBody,
+  CreateEmailTemplateBody,
+  CreateLandingPageBody,
   CreateMailingListBody,
   CreateSeriesBody,
   CreateSubscriberBody,
   DashboardSummary,
+  EmailTemplate,
   FunnelOverview,
   HealthStatus,
   ImportSubscribersBody,
   ImportSubscribersResult,
+  LandingPage,
+  ListAutomationLogsParams,
+  ListAutomationRulesParams,
   ListBooksParams,
+  ListEmailTemplatesParams,
+  ListLandingPagesParams,
   ListMailingListsParams,
   ListSeriesParams,
   ListSubscribersParams,
@@ -42,7 +58,10 @@ import type {
   SeriesWithBooks,
   Subscriber,
   SubscriberStats,
+  UpdateAutomationRuleBody,
   UpdateBookBody,
+  UpdateEmailTemplateBody,
+  UpdateLandingPageBody,
   UpdateSubscriberBody,
 } from "./api.schemas";
 
@@ -2372,6 +2391,1779 @@ export const useImportSubscribers = <
   TContext
 > => {
   return useMutation(getImportSubscribersMutationOptions(options));
+};
+
+/**
+ * @summary List all landing pages
+ */
+export const getListLandingPagesUrl = (params?: ListLandingPagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/landing-pages?${stringifiedParams}`
+    : `/api/landing-pages`;
+};
+
+export const listLandingPages = async (
+  params?: ListLandingPagesParams,
+  options?: RequestInit,
+): Promise<LandingPage[]> => {
+  return customFetch<LandingPage[]>(getListLandingPagesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLandingPagesQueryKey = (
+  params?: ListLandingPagesParams,
+) => {
+  return [`/api/landing-pages`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLandingPagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLandingPages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListLandingPagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLandingPages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLandingPagesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLandingPages>>
+  > = ({ signal }) => listLandingPages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLandingPages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLandingPagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLandingPages>>
+>;
+export type ListLandingPagesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all landing pages
+ */
+
+export function useListLandingPages<
+  TData = Awaited<ReturnType<typeof listLandingPages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListLandingPagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLandingPages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLandingPagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new landing page
+ */
+export const getCreateLandingPageUrl = () => {
+  return `/api/landing-pages`;
+};
+
+export const createLandingPage = async (
+  createLandingPageBody: CreateLandingPageBody,
+  options?: RequestInit,
+): Promise<LandingPage> => {
+  return customFetch<LandingPage>(getCreateLandingPageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createLandingPageBody),
+  });
+};
+
+export const getCreateLandingPageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLandingPage>>,
+    TError,
+    { data: BodyType<CreateLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLandingPage>>,
+  TError,
+  { data: BodyType<CreateLandingPageBody> },
+  TContext
+> => {
+  const mutationKey = ["createLandingPage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLandingPage>>,
+    { data: BodyType<CreateLandingPageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLandingPage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLandingPageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLandingPage>>
+>;
+export type CreateLandingPageMutationBody = BodyType<CreateLandingPageBody>;
+export type CreateLandingPageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new landing page
+ */
+export const useCreateLandingPage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLandingPage>>,
+    TError,
+    { data: BodyType<CreateLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLandingPage>>,
+  TError,
+  { data: BodyType<CreateLandingPageBody> },
+  TContext
+> => {
+  return useMutation(getCreateLandingPageMutationOptions(options));
+};
+
+/**
+ * @summary Get landing page by ID
+ */
+export const getGetLandingPageUrl = (id: number) => {
+  return `/api/landing-pages/${id}`;
+};
+
+export const getLandingPage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<LandingPage> => {
+  return customFetch<LandingPage>(getGetLandingPageUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLandingPageQueryKey = (id: number) => {
+  return [`/api/landing-pages/${id}`] as const;
+};
+
+export const getGetLandingPageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLandingPage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandingPage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLandingPageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLandingPage>>> = ({
+    signal,
+  }) => getLandingPage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLandingPage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLandingPageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLandingPage>>
+>;
+export type GetLandingPageQueryError = ErrorType<void>;
+
+/**
+ * @summary Get landing page by ID
+ */
+
+export function useGetLandingPage<
+  TData = Awaited<ReturnType<typeof getLandingPage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandingPage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandingPageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a landing page
+ */
+export const getUpdateLandingPageUrl = (id: number) => {
+  return `/api/landing-pages/${id}`;
+};
+
+export const updateLandingPage = async (
+  id: number,
+  updateLandingPageBody: UpdateLandingPageBody,
+  options?: RequestInit,
+): Promise<LandingPage> => {
+  return customFetch<LandingPage>(getUpdateLandingPageUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateLandingPageBody),
+  });
+};
+
+export const getUpdateLandingPageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLandingPage>>,
+    TError,
+    { id: number; data: BodyType<UpdateLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLandingPage>>,
+  TError,
+  { id: number; data: BodyType<UpdateLandingPageBody> },
+  TContext
+> => {
+  const mutationKey = ["updateLandingPage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLandingPage>>,
+    { id: number; data: BodyType<UpdateLandingPageBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateLandingPage(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLandingPageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLandingPage>>
+>;
+export type UpdateLandingPageMutationBody = BodyType<UpdateLandingPageBody>;
+export type UpdateLandingPageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a landing page
+ */
+export const useUpdateLandingPage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLandingPage>>,
+    TError,
+    { id: number; data: BodyType<UpdateLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateLandingPage>>,
+  TError,
+  { id: number; data: BodyType<UpdateLandingPageBody> },
+  TContext
+> => {
+  return useMutation(getUpdateLandingPageMutationOptions(options));
+};
+
+/**
+ * @summary Delete a landing page
+ */
+export const getDeleteLandingPageUrl = (id: number) => {
+  return `/api/landing-pages/${id}`;
+};
+
+export const deleteLandingPage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteLandingPageUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteLandingPageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLandingPage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteLandingPage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteLandingPage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteLandingPage>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteLandingPage(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteLandingPageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteLandingPage>>
+>;
+
+export type DeleteLandingPageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a landing page
+ */
+export const useDeleteLandingPage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLandingPage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteLandingPage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteLandingPageMutationOptions(options));
+};
+
+/**
+ * @summary List all email templates
+ */
+export const getListEmailTemplatesUrl = (params?: ListEmailTemplatesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/email-templates?${stringifiedParams}`
+    : `/api/email-templates`;
+};
+
+export const listEmailTemplates = async (
+  params?: ListEmailTemplatesParams,
+  options?: RequestInit,
+): Promise<EmailTemplate[]> => {
+  return customFetch<EmailTemplate[]>(getListEmailTemplatesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEmailTemplatesQueryKey = (
+  params?: ListEmailTemplatesParams,
+) => {
+  return [`/api/email-templates`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEmailTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEmailTemplates>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEmailTemplatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEmailTemplates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEmailTemplatesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEmailTemplates>>
+  > = ({ signal }) => listEmailTemplates(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEmailTemplates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEmailTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEmailTemplates>>
+>;
+export type ListEmailTemplatesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all email templates
+ */
+
+export function useListEmailTemplates<
+  TData = Awaited<ReturnType<typeof listEmailTemplates>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEmailTemplatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEmailTemplates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEmailTemplatesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new email template
+ */
+export const getCreateEmailTemplateUrl = () => {
+  return `/api/email-templates`;
+};
+
+export const createEmailTemplate = async (
+  createEmailTemplateBody: CreateEmailTemplateBody,
+  options?: RequestInit,
+): Promise<EmailTemplate> => {
+  return customFetch<EmailTemplate>(getCreateEmailTemplateUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEmailTemplateBody),
+  });
+};
+
+export const getCreateEmailTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmailTemplate>>,
+    TError,
+    { data: BodyType<CreateEmailTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEmailTemplate>>,
+  TError,
+  { data: BodyType<CreateEmailTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["createEmailTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEmailTemplate>>,
+    { data: BodyType<CreateEmailTemplateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createEmailTemplate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEmailTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEmailTemplate>>
+>;
+export type CreateEmailTemplateMutationBody = BodyType<CreateEmailTemplateBody>;
+export type CreateEmailTemplateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new email template
+ */
+export const useCreateEmailTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmailTemplate>>,
+    TError,
+    { data: BodyType<CreateEmailTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEmailTemplate>>,
+  TError,
+  { data: BodyType<CreateEmailTemplateBody> },
+  TContext
+> => {
+  return useMutation(getCreateEmailTemplateMutationOptions(options));
+};
+
+/**
+ * @summary Get email template by ID
+ */
+export const getGetEmailTemplateUrl = (id: number) => {
+  return `/api/email-templates/${id}`;
+};
+
+export const getEmailTemplate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<EmailTemplate> => {
+  return customFetch<EmailTemplate>(getGetEmailTemplateUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmailTemplateQueryKey = (id: number) => {
+  return [`/api/email-templates/${id}`] as const;
+};
+
+export const getGetEmailTemplateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmailTemplate>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEmailTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEmailTemplateQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmailTemplate>>
+  > = ({ signal }) => getEmailTemplate(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmailTemplate>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmailTemplateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmailTemplate>>
+>;
+export type GetEmailTemplateQueryError = ErrorType<void>;
+
+/**
+ * @summary Get email template by ID
+ */
+
+export function useGetEmailTemplate<
+  TData = Awaited<ReturnType<typeof getEmailTemplate>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEmailTemplate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmailTemplateQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update an email template
+ */
+export const getUpdateEmailTemplateUrl = (id: number) => {
+  return `/api/email-templates/${id}`;
+};
+
+export const updateEmailTemplate = async (
+  id: number,
+  updateEmailTemplateBody: UpdateEmailTemplateBody,
+  options?: RequestInit,
+): Promise<EmailTemplate> => {
+  return customFetch<EmailTemplate>(getUpdateEmailTemplateUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateEmailTemplateBody),
+  });
+};
+
+export const getUpdateEmailTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEmailTemplate>>,
+    TError,
+    { id: number; data: BodyType<UpdateEmailTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEmailTemplate>>,
+  TError,
+  { id: number; data: BodyType<UpdateEmailTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["updateEmailTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEmailTemplate>>,
+    { id: number; data: BodyType<UpdateEmailTemplateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateEmailTemplate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEmailTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEmailTemplate>>
+>;
+export type UpdateEmailTemplateMutationBody = BodyType<UpdateEmailTemplateBody>;
+export type UpdateEmailTemplateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update an email template
+ */
+export const useUpdateEmailTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEmailTemplate>>,
+    TError,
+    { id: number; data: BodyType<UpdateEmailTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateEmailTemplate>>,
+  TError,
+  { id: number; data: BodyType<UpdateEmailTemplateBody> },
+  TContext
+> => {
+  return useMutation(getUpdateEmailTemplateMutationOptions(options));
+};
+
+/**
+ * @summary Delete an email template
+ */
+export const getDeleteEmailTemplateUrl = (id: number) => {
+  return `/api/email-templates/${id}`;
+};
+
+export const deleteEmailTemplate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteEmailTemplateUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteEmailTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEmailTemplate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteEmailTemplate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteEmailTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteEmailTemplate>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteEmailTemplate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteEmailTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteEmailTemplate>>
+>;
+
+export type DeleteEmailTemplateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an email template
+ */
+export const useDeleteEmailTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEmailTemplate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteEmailTemplate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteEmailTemplateMutationOptions(options));
+};
+
+/**
+ * @summary List all automation rules
+ */
+export const getListAutomationRulesUrl = (
+  params?: ListAutomationRulesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/automation-rules?${stringifiedParams}`
+    : `/api/automation-rules`;
+};
+
+export const listAutomationRules = async (
+  params?: ListAutomationRulesParams,
+  options?: RequestInit,
+): Promise<AutomationRule[]> => {
+  return customFetch<AutomationRule[]>(getListAutomationRulesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAutomationRulesQueryKey = (
+  params?: ListAutomationRulesParams,
+) => {
+  return [`/api/automation-rules`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAutomationRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAutomationRules>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAutomationRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAutomationRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAutomationRulesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAutomationRules>>
+  > = ({ signal }) =>
+    listAutomationRules(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAutomationRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAutomationRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAutomationRules>>
+>;
+export type ListAutomationRulesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all automation rules
+ */
+
+export function useListAutomationRules<
+  TData = Awaited<ReturnType<typeof listAutomationRules>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAutomationRulesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAutomationRules>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAutomationRulesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new automation rule
+ */
+export const getCreateAutomationRuleUrl = () => {
+  return `/api/automation-rules`;
+};
+
+export const createAutomationRule = async (
+  createAutomationRuleBody: CreateAutomationRuleBody,
+  options?: RequestInit,
+): Promise<AutomationRule> => {
+  return customFetch<AutomationRule>(getCreateAutomationRuleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAutomationRuleBody),
+  });
+};
+
+export const getCreateAutomationRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAutomationRule>>,
+    TError,
+    { data: BodyType<CreateAutomationRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAutomationRule>>,
+  TError,
+  { data: BodyType<CreateAutomationRuleBody> },
+  TContext
+> => {
+  const mutationKey = ["createAutomationRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAutomationRule>>,
+    { data: BodyType<CreateAutomationRuleBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAutomationRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAutomationRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAutomationRule>>
+>;
+export type CreateAutomationRuleMutationBody =
+  BodyType<CreateAutomationRuleBody>;
+export type CreateAutomationRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new automation rule
+ */
+export const useCreateAutomationRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAutomationRule>>,
+    TError,
+    { data: BodyType<CreateAutomationRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAutomationRule>>,
+  TError,
+  { data: BodyType<CreateAutomationRuleBody> },
+  TContext
+> => {
+  return useMutation(getCreateAutomationRuleMutationOptions(options));
+};
+
+/**
+ * @summary Get automation rule by ID
+ */
+export const getGetAutomationRuleUrl = (id: number) => {
+  return `/api/automation-rules/${id}`;
+};
+
+export const getAutomationRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AutomationRuleWithLogs> => {
+  return customFetch<AutomationRuleWithLogs>(getGetAutomationRuleUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAutomationRuleQueryKey = (id: number) => {
+  return [`/api/automation-rules/${id}`] as const;
+};
+
+export const getGetAutomationRuleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAutomationRule>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAutomationRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAutomationRuleQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAutomationRule>>
+  > = ({ signal }) => getAutomationRule(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAutomationRule>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAutomationRuleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAutomationRule>>
+>;
+export type GetAutomationRuleQueryError = ErrorType<void>;
+
+/**
+ * @summary Get automation rule by ID
+ */
+
+export function useGetAutomationRule<
+  TData = Awaited<ReturnType<typeof getAutomationRule>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAutomationRule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAutomationRuleQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update an automation rule
+ */
+export const getUpdateAutomationRuleUrl = (id: number) => {
+  return `/api/automation-rules/${id}`;
+};
+
+export const updateAutomationRule = async (
+  id: number,
+  updateAutomationRuleBody: UpdateAutomationRuleBody,
+  options?: RequestInit,
+): Promise<AutomationRule> => {
+  return customFetch<AutomationRule>(getUpdateAutomationRuleUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAutomationRuleBody),
+  });
+};
+
+export const getUpdateAutomationRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAutomationRule>>,
+    TError,
+    { id: number; data: BodyType<UpdateAutomationRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAutomationRule>>,
+  TError,
+  { id: number; data: BodyType<UpdateAutomationRuleBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAutomationRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAutomationRule>>,
+    { id: number; data: BodyType<UpdateAutomationRuleBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateAutomationRule(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAutomationRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAutomationRule>>
+>;
+export type UpdateAutomationRuleMutationBody =
+  BodyType<UpdateAutomationRuleBody>;
+export type UpdateAutomationRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update an automation rule
+ */
+export const useUpdateAutomationRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAutomationRule>>,
+    TError,
+    { id: number; data: BodyType<UpdateAutomationRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAutomationRule>>,
+  TError,
+  { id: number; data: BodyType<UpdateAutomationRuleBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAutomationRuleMutationOptions(options));
+};
+
+/**
+ * @summary Delete an automation rule
+ */
+export const getDeleteAutomationRuleUrl = (id: number) => {
+  return `/api/automation-rules/${id}`;
+};
+
+export const deleteAutomationRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteAutomationRuleUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAutomationRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAutomationRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAutomationRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAutomationRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAutomationRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAutomationRule>>
+>;
+
+export type DeleteAutomationRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an automation rule
+ */
+export const useDeleteAutomationRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAutomationRuleMutationOptions(options));
+};
+
+/**
+ * @summary Toggle automation rule active/inactive
+ */
+export const getToggleAutomationRuleUrl = (id: number) => {
+  return `/api/automation-rules/${id}/toggle`;
+};
+
+export const toggleAutomationRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AutomationRule> => {
+  return customFetch<AutomationRule>(getToggleAutomationRuleUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getToggleAutomationRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["toggleAutomationRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleAutomationRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return toggleAutomationRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleAutomationRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleAutomationRule>>
+>;
+
+export type ToggleAutomationRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Toggle automation rule active/inactive
+ */
+export const useToggleAutomationRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getToggleAutomationRuleMutationOptions(options));
+};
+
+/**
+ * @summary Manually execute an automation rule
+ */
+export const getExecuteAutomationRuleUrl = (id: number) => {
+  return `/api/automation-rules/${id}/execute`;
+};
+
+export const executeAutomationRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AutomationExecutionResult> => {
+  return customFetch<AutomationExecutionResult>(
+    getExecuteAutomationRuleUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getExecuteAutomationRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof executeAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof executeAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["executeAutomationRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof executeAutomationRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return executeAutomationRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExecuteAutomationRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof executeAutomationRule>>
+>;
+
+export type ExecuteAutomationRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Manually execute an automation rule
+ */
+export const useExecuteAutomationRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof executeAutomationRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof executeAutomationRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getExecuteAutomationRuleMutationOptions(options));
+};
+
+/**
+ * @summary List automation execution logs
+ */
+export const getListAutomationLogsUrl = (params?: ListAutomationLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/automation-logs?${stringifiedParams}`
+    : `/api/automation-logs`;
+};
+
+export const listAutomationLogs = async (
+  params?: ListAutomationLogsParams,
+  options?: RequestInit,
+): Promise<AutomationLog[]> => {
+  return customFetch<AutomationLog[]>(getListAutomationLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAutomationLogsQueryKey = (
+  params?: ListAutomationLogsParams,
+) => {
+  return [`/api/automation-logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAutomationLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAutomationLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAutomationLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAutomationLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAutomationLogsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAutomationLogs>>
+  > = ({ signal }) => listAutomationLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAutomationLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAutomationLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAutomationLogs>>
+>;
+export type ListAutomationLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List automation execution logs
+ */
+
+export function useListAutomationLogs<
+  TData = Awaited<ReturnType<typeof listAutomationLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAutomationLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAutomationLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAutomationLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public email capture endpoint for landing pages
+ */
+export const getCaptureEmailUrl = () => {
+  return `/api/capture`;
+};
+
+export const captureEmail = async (
+  captureEmailBody: CaptureEmailBody,
+  options?: RequestInit,
+): Promise<CaptureEmailResult> => {
+  return customFetch<CaptureEmailResult>(getCaptureEmailUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(captureEmailBody),
+  });
+};
+
+export const getCaptureEmailMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof captureEmail>>,
+    TError,
+    { data: BodyType<CaptureEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof captureEmail>>,
+  TError,
+  { data: BodyType<CaptureEmailBody> },
+  TContext
+> => {
+  const mutationKey = ["captureEmail"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof captureEmail>>,
+    { data: BodyType<CaptureEmailBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return captureEmail(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CaptureEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof captureEmail>>
+>;
+export type CaptureEmailMutationBody = BodyType<CaptureEmailBody>;
+export type CaptureEmailMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Public email capture endpoint for landing pages
+ */
+export const useCaptureEmail = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof captureEmail>>,
+    TError,
+    { data: BodyType<CaptureEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof captureEmail>>,
+  TError,
+  { data: BodyType<CaptureEmailBody> },
+  TContext
+> => {
+  return useMutation(getCaptureEmailMutationOptions(options));
+};
+
+/**
+ * @summary Capture email via a specific landing page
+ */
+export const getCaptureByLandingPageUrl = (landingPageId: number) => {
+  return `/api/capture/by-landing-page/${landingPageId}`;
+};
+
+export const captureByLandingPage = async (
+  landingPageId: number,
+  captureByLandingPageBody: CaptureByLandingPageBody,
+  options?: RequestInit,
+): Promise<CaptureEmailResult> => {
+  return customFetch<CaptureEmailResult>(
+    getCaptureByLandingPageUrl(landingPageId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(captureByLandingPageBody),
+    },
+  );
+};
+
+export const getCaptureByLandingPageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof captureByLandingPage>>,
+    TError,
+    { landingPageId: number; data: BodyType<CaptureByLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof captureByLandingPage>>,
+  TError,
+  { landingPageId: number; data: BodyType<CaptureByLandingPageBody> },
+  TContext
+> => {
+  const mutationKey = ["captureByLandingPage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof captureByLandingPage>>,
+    { landingPageId: number; data: BodyType<CaptureByLandingPageBody> }
+  > = (props) => {
+    const { landingPageId, data } = props ?? {};
+
+    return captureByLandingPage(landingPageId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CaptureByLandingPageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof captureByLandingPage>>
+>;
+export type CaptureByLandingPageMutationBody =
+  BodyType<CaptureByLandingPageBody>;
+export type CaptureByLandingPageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Capture email via a specific landing page
+ */
+export const useCaptureByLandingPage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof captureByLandingPage>>,
+    TError,
+    { landingPageId: number; data: BodyType<CaptureByLandingPageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof captureByLandingPage>>,
+  TError,
+  { landingPageId: number; data: BodyType<CaptureByLandingPageBody> },
+  TContext
+> => {
+  return useMutation(getCaptureByLandingPageMutationOptions(options));
 };
 
 /**

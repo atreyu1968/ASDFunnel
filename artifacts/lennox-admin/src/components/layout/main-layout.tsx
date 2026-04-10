@@ -7,7 +7,10 @@ import {
   Filter, 
   Calendar as CalendarIcon,
   Mail,
-  UserCheck
+  UserCheck,
+  Globe,
+  FileCode,
+  Zap,
 } from "lucide-react";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +25,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/calendar", label: "Calendario", icon: CalendarIcon },
     { href: "/mailing-lists", label: "Listas de Correo", icon: Mail },
     { href: "/subscribers", label: "Suscriptores", icon: UserCheck },
+    { href: "/landing-pages", label: "Landing Pages", icon: Globe },
+    { href: "/email-templates", label: "Plantillas Email", icon: FileCode },
+    { href: "/automations", label: "Automatizaciones", icon: Zap },
   ];
 
   return (

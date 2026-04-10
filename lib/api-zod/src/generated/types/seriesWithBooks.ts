@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import type { Book } from "./book";
 import type { SeriesWithBooksStatus } from "./seriesWithBooksStatus";
@@ -14,6 +14,7 @@ export interface SeriesWithBooks {
   name: string;
   description?: string | null;
   genre?: string | null;
+  language: string;
   status: SeriesWithBooksStatus;
   displayOrder: number;
   crossoverFromSeriesId?: number | null;

@@ -184,7 +184,7 @@ export default function MailingLists() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Listas de Correo</h2>
-          <p className="text-muted-foreground">Gestion de listas de captacion separadas por autor e idioma.</p>
+          <p className="text-muted-foreground">Gestión de listas de captación separadas por autor e idioma.</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
           setIsCreateOpen(open);
@@ -238,12 +238,12 @@ export default function MailingLists() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="es">Espanol</SelectItem>
+                            <SelectItem value="es">Español</SelectItem>
                             <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="fr">Francais</SelectItem>
+                            <SelectItem value="fr">Français</SelectItem>
                             <SelectItem value="de">Deutsch</SelectItem>
                             <SelectItem value="it">Italiano</SelectItem>
-                            <SelectItem value="pt">Portugues</SelectItem>
+                            <SelectItem value="pt">Português</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -258,7 +258,7 @@ export default function MailingLists() {
                     <FormItem>
                       <FormLabel>Nombre de la Lista *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Lennox Hale - Espanol" {...field} data-testid="input-list-name" />
+                        <Input placeholder="Ej. Lista Principal - Español" {...field} data-testid="input-list-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -269,9 +269,9 @@ export default function MailingLists() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripcion</FormLabel>
+                      <FormLabel>Descripción</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Descripcion de la lista" {...field} value={field.value || ""} data-testid="input-list-description" />
+                        <Textarea placeholder="Descripción de la lista" {...field} value={field.value || ""} data-testid="input-list-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -417,10 +417,12 @@ export default function MailingLists() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los idiomas</SelectItem>
-            <SelectItem value="es">Espanol</SelectItem>
+            <SelectItem value="es">Español</SelectItem>
             <SelectItem value="en">English</SelectItem>
-            <SelectItem value="fr">Francais</SelectItem>
+            <SelectItem value="fr">Français</SelectItem>
             <SelectItem value="de">Deutsch</SelectItem>
+            <SelectItem value="pt">Português</SelectItem>
+            <SelectItem value="it">Italiano</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -460,8 +462,8 @@ export default function MailingLists() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminar lista?</AlertDialogTitle>
-                          <AlertDialogDescription>Se eliminaran todos los suscriptores asociados.</AlertDialogDescription>
+                          <AlertDialogTitle>¿Eliminar lista?</AlertDialogTitle>
+                          <AlertDialogDescription>Se eliminarán todos los suscriptores asociados.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>

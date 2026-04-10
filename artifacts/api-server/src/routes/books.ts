@@ -25,6 +25,7 @@ router.get("/books", async (req, res): Promise<void> => {
   if (query.data.seriesId) conditions.push(eq(booksTable.seriesId, query.data.seriesId));
   if (query.data.status) conditions.push(eq(booksTable.status, query.data.status));
   if (query.data.funnelRole) conditions.push(eq(booksTable.funnelRole, query.data.funnelRole));
+  if (query.data.language) conditions.push(eq(booksTable.language, query.data.language));
 
   const books = await db
     .select({
@@ -34,6 +35,7 @@ router.get("/books", async (req, res): Promise<void> => {
       title: booksTable.title,
       subtitle: booksTable.subtitle,
       description: booksTable.description,
+      language: booksTable.language,
       wordCount: booksTable.wordCount,
       funnelRole: booksTable.funnelRole,
       pricingStrategy: booksTable.pricingStrategy,
@@ -101,6 +103,7 @@ router.get("/books/:id", async (req, res): Promise<void> => {
       title: booksTable.title,
       subtitle: booksTable.subtitle,
       description: booksTable.description,
+      language: booksTable.language,
       wordCount: booksTable.wordCount,
       funnelRole: booksTable.funnelRole,
       pricingStrategy: booksTable.pricingStrategy,

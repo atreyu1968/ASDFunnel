@@ -9,6 +9,7 @@ export const seriesTable = pgTable("series", {
   name: text("name").notNull(),
   description: text("description"),
   genre: text("genre"),
+  language: text("language").notNull().default("es"),
   status: text("status").notNull().default("planned"),
   displayOrder: integer("display_order").notNull().default(0),
   crossoverFromSeriesId: integer("crossover_from_series_id"),

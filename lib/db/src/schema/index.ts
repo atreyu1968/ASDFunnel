@@ -4,3 +4,7 @@ export * from "./books";
 export * from "./mailing-lists";
 export * from "./subscribers";
 export * from "./activity";
+export * from "./landing-pages";
+export * from "./email-templates";
+export * from "./automation-rules";
+export * from "./automation-logs";

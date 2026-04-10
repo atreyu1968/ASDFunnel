@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Lennox Hale Publishing Management API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import type { BookDistributionChannel } from "./bookDistributionChannel";
 import type { BookFunnelRole } from "./bookFunnelRole";
@@ -17,6 +17,7 @@ export interface Book {
   title: string;
   subtitle?: string | null;
   description?: string | null;
+  language: string;
   wordCount?: number | null;
   funnelRole: BookFunnelRole;
   pricingStrategy: BookPricingStrategy;
