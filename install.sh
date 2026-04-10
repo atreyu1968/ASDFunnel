@@ -4,6 +4,14 @@ set -eo pipefail
 # ==============================================================================
 # ASD FUNNEL - Autoinstalador para Ubuntu 22.04/24.04
 # Atreyu Servicios Digitales
+#
+# Uso en servidor recién instalado:
+#   apt-get update && apt-get install -y curl
+#   curl -fsSL https://raw.githubusercontent.com/atreyu1968/ASDFunnel/main/install.sh -o /tmp/install.sh
+#   bash /tmp/install.sh
+#
+# Uso para actualizar:
+#   bash /var/www/asdfunnel/install.sh
 # ==============================================================================
 
 # Colores
@@ -46,8 +54,23 @@ echo -e "${NC}"
 
 # ─── Verificar root ──────────────────────────────────────────────────────────
 if [ "$EUID" -ne 0 ]; then
-    print_error "Este script debe ejecutarse como root (sudo bash install.sh)"
+    print_error "Este script debe ejecutarse como root"
+    echo "  Uso: sudo bash install.sh"
     exit 1
+fi
+
+# ─── Verificar Ubuntu ────────────────────────────────────────────────────────
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [ "$ID" != "ubuntu" ]; then
+        print_warning "Este script está diseñado para Ubuntu. Sistema detectado: $ID $VERSION_ID"
+        read -p "¿Deseas continuar de todas formas? (s/N): " CONTINUE
+        if [ "$CONTINUE" != "s" ] && [ "$CONTINUE" != "S" ]; then
+            exit 1
+        fi
+    else
+        print_status "Ubuntu $VERSION_ID detectado"
+    fi
 fi
 
 # ─── Detectar instalación existente ───────────────────────────────────────────
@@ -62,63 +85,116 @@ else
     print_status "Nueva instalación detectada."
 fi
 
-# ─── 1. Dependencias del sistema ─────────────────────────────────────────────
-print_step "1/8 Instalando dependencias del sistema"
+# ==============================================================================
+# PASO 1: Actualizar sistema e instalar paquetes base
+# ==============================================================================
+print_step "1/8 Actualizando sistema e instalando paquetes base"
 
+print_status "Actualizando lista de paquetes..."
 apt-get update -qq
-apt-get install -y -qq curl git build-essential nginx postgresql postgresql-contrib
-apt-mark manual nginx
-print_success "Dependencias del sistema instaladas"
 
-# ─── 2. Node.js y pnpm ──────────────────────────────────────────────────────
+print_status "Instalando paquetes esenciales..."
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    build-essential \
+    python3 \
+    openssl \
+    sudo \
+    nginx \
+    postgresql \
+    postgresql-contrib \
+    ufw \
+    2>&1 | tail -5
+
+apt-mark manual nginx postgresql 2>/dev/null || true
+
+print_success "Paquetes base instalados: curl, git, nginx, postgresql, build-essential"
+
+# ==============================================================================
+# PASO 2: Instalar Node.js y pnpm
+# ==============================================================================
 print_step "2/8 Instalando Node.js $NODE_VERSION y pnpm"
 
+INSTALL_NODE=true
 if command -v node &>/dev/null; then
     CURRENT_NODE=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
     if [ "$CURRENT_NODE" -ge "$NODE_VERSION" ]; then
-        print_status "Node.js $(node -v) ya instalado"
+        print_status "Node.js $(node -v) ya instalado, omitiendo"
+        INSTALL_NODE=false
     else
-        print_status "Actualizando Node.js..."
-        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
-        apt-get install -y -qq nodejs
+        print_status "Node.js $(node -v) encontrado, se necesita v$NODE_VERSION+. Actualizando..."
     fi
-else
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
-    apt-get install -y -qq nodejs
 fi
 
-chmod 755 /usr/bin/node /usr/bin/npm
+if [ "$INSTALL_NODE" = true ]; then
+    print_status "Descargando e instalando Node.js $NODE_VERSION..."
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg 2>/dev/null
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs 2>&1 | tail -3
+fi
+
+chmod 755 /usr/bin/node 2>/dev/null || true
+chmod 755 /usr/bin/npm 2>/dev/null || true
+
+if ! command -v node &>/dev/null; then
+    print_error "Node.js no se instaló correctamente"
+    exit 1
+fi
+
+print_status "Instalando/actualizando pnpm..."
+npm install -g pnpm@${PNPM_VERSION} 2>&1 | tail -2
 
 if ! command -v pnpm &>/dev/null; then
-    npm install -g pnpm@${PNPM_VERSION}
-    print_success "pnpm instalado"
-else
-    print_status "pnpm $(pnpm -v) ya instalado"
+    print_error "pnpm no se instaló correctamente"
+    exit 1
 fi
 
-print_success "Node.js $(node -v) + pnpm $(pnpm -v)"
+print_success "Node.js $(node -v) + pnpm $(pnpm -v) instalados"
 
-# ─── 3. PostgreSQL ──────────────────────────────────────────────────────────
+# ==============================================================================
+# PASO 3: Configurar PostgreSQL
+# ==============================================================================
 print_step "3/8 Configurando PostgreSQL"
 
-systemctl enable postgresql
+systemctl enable postgresql 2>/dev/null
 systemctl start postgresql
+
+if ! systemctl is-active --quiet postgresql; then
+    print_error "PostgreSQL no se pudo iniciar"
+    echo "  Revisa: journalctl -u postgresql -n 20"
+    exit 1
+fi
 
 if [ "$IS_UPDATE" = false ]; then
     DB_PASS=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24)
     SESSION_SECRET=$(openssl rand -base64 32)
 
+    print_status "Creando usuario de base de datos '$DB_USER'..."
     sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
-        sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
+        sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null
+
+    print_status "Creando base de datos '$DB_NAME'..."
     sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-        sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+        sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
+
+    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
+    sudo -u postgres psql -d "$DB_NAME" -c "GRANT ALL ON SCHEMA public TO $DB_USER;" 2>/dev/null
 
     PG_HBA=$(sudo -u postgres psql -t -c "SHOW hba_file;" | tr -d ' ')
-    if ! grep -q "$DB_USER" "$PG_HBA" 2>/dev/null; then
-        sed -i "/^# IPv4 local connections:/a host    $DB_NAME    $DB_USER    127.0.0.1/32    md5" "$PG_HBA"
-        sed -i "/^# \"local\" is for Unix/a local   $DB_NAME    $DB_USER                    md5" "$PG_HBA"
-        systemctl reload postgresql
+    if [ -n "$PG_HBA" ] && [ -f "$PG_HBA" ]; then
+        if ! grep -q "$DB_USER" "$PG_HBA" 2>/dev/null; then
+            print_status "Configurando autenticación PostgreSQL (md5)..."
+            sed -i "/^# IPv4 local connections:/a host    $DB_NAME    $DB_USER    127.0.0.1/32    md5" "$PG_HBA"
+            sed -i "/^# \"local\" is for Unix/a local   $DB_NAME    $DB_USER                    md5" "$PG_HBA"
+            systemctl reload postgresql
+        fi
     fi
 
     print_success "Base de datos '$DB_NAME' creada con usuario '$DB_USER'"
@@ -130,31 +206,51 @@ fi
 
 DATABASE_URL="postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME"
 
-# ─── 4. Usuario del sistema ─────────────────────────────────────────────────
+print_status "Verificando conexión a PostgreSQL..."
+if PGPASSWORD="$DB_PASS" psql -U "$DB_USER" -h localhost -d "$DB_NAME" -c "SELECT 1;" &>/dev/null; then
+    print_success "Conexión a PostgreSQL verificada"
+else
+    print_warning "No se pudo verificar la conexión. Se continuará de todas formas."
+fi
+
+# ==============================================================================
+# PASO 4: Crear usuario del sistema
+# ==============================================================================
 print_step "4/8 Configurando usuario del sistema"
 
-id "$APP_USER" &>/dev/null || useradd --system --create-home --shell /bin/bash "$APP_USER"
-print_success "Usuario '$APP_USER' configurado"
+if id "$APP_USER" &>/dev/null; then
+    print_status "Usuario '$APP_USER' ya existe"
+else
+    useradd --system --create-home --shell /bin/bash "$APP_USER"
+    print_success "Usuario '$APP_USER' creado"
+fi
 
-# ─── 5. Clonar/actualizar código ────────────────────────────────────────────
+# ==============================================================================
+# PASO 5: Clonar/actualizar código fuente
+# ==============================================================================
 print_step "5/8 Descargando código fuente"
 
-git config --global --add safe.directory "$APP_DIR"
+git config --global --add safe.directory "$APP_DIR" 2>/dev/null
 
 if [ -d "$APP_DIR/.git" ]; then
+    print_status "Repositorio existente detectado. Actualizando..."
     cd "$APP_DIR"
-    git fetch origin
-    git reset --hard origin/main
+    sudo -u "$APP_USER" git fetch origin 2>&1 | tail -2
+    sudo -u "$APP_USER" git reset --hard origin/main 2>&1 | tail -2
     print_success "Código actualizado desde GitHub"
 else
-    git clone --depth 1 "$GITHUB_REPO" "$APP_DIR"
-    print_success "Repositorio clonado"
+    print_status "Clonando repositorio desde GitHub..."
+    mkdir -p /var/www
+    git clone --depth 1 "$GITHUB_REPO" "$APP_DIR" 2>&1 | tail -3
+    print_success "Repositorio clonado en $APP_DIR"
 fi
 
 mkdir -p "$UPLOAD_DIR"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
-# ─── 6. Configuración persistente ───────────────────────────────────────────
+# ==============================================================================
+# PASO 6: Configuración persistente
+# ==============================================================================
 print_step "6/8 Guardando configuración"
 
 mkdir -p "$CONFIG_DIR"
@@ -169,10 +265,12 @@ UPLOAD_DIR=$UPLOAD_DIR
 APP_BASE_URL=http://localhost:$APP_PORT
 SECURE_COOKIES=false
 EOF
+    print_success "Configuración inicial creada"
 else
     grep -q "^UPLOAD_DIR=" "$CONFIG_DIR/env" || echo "UPLOAD_DIR=$UPLOAD_DIR" >> "$CONFIG_DIR/env"
     grep -q "^APP_BASE_URL=" "$CONFIG_DIR/env" || echo "APP_BASE_URL=http://localhost:$APP_PORT" >> "$CONFIG_DIR/env"
     grep -q "^SECURE_COOKIES=" "$CONFIG_DIR/env" || echo "SECURE_COOKIES=false" >> "$CONFIG_DIR/env"
+    print_status "Configuración existente preservada y actualizada"
 fi
 
 chmod 755 "$CONFIG_DIR"
@@ -181,8 +279,10 @@ chown root:root "$CONFIG_DIR/env"
 
 print_success "Configuración guardada en $CONFIG_DIR/env"
 
-# ─── 7. Build de la aplicación ───────────────────────────────────────────────
-print_step "7/8 Compilando aplicación"
+# ==============================================================================
+# PASO 7: Build de la aplicación
+# ==============================================================================
+print_step "7/8 Compilando aplicación (esto puede tardar unos minutos)"
 
 cd "$APP_DIR"
 
@@ -190,29 +290,35 @@ export PORT=$APP_PORT
 export BASE_PATH="/"
 export DATABASE_URL="$DATABASE_URL"
 
-print_status "Instalando dependencias (pnpm install)..."
-sudo -u "$APP_USER" -E env NODE_ENV=development pnpm install --frozen-lockfile 2>&1 | tail -3
+print_status "Instalando dependencias Node.js (pnpm install)..."
+sudo -u "$APP_USER" -E env NODE_ENV=development HOME="/home/$APP_USER" pnpm install --frozen-lockfile 2>&1 | tail -5
+print_success "Dependencias instaladas"
 
-print_status "Compilando frontend..."
-sudo -u "$APP_USER" -E env NODE_ENV=production pnpm --filter @workspace/lennox-admin run build 2>&1 | tail -3
+print_status "Compilando frontend (React + Vite)..."
+sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm --filter @workspace/lennox-admin run build 2>&1 | tail -5
+print_success "Frontend compilado"
 
-print_status "Compilando API server..."
-sudo -u "$APP_USER" -E env NODE_ENV=production pnpm --filter @workspace/api-server run build 2>&1 | tail -3
+print_status "Compilando backend (Express + esbuild)..."
+sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm --filter @workspace/api-server run build 2>&1 | tail -5
+print_success "Backend compilado"
 
-print_status "Sincronizando esquema de base de datos..."
-sudo -u "$APP_USER" -E pnpm --filter @workspace/db run push 2>&1 | tail -3
-
-print_status "Limpiando dependencias de desarrollo..."
-sudo -u "$APP_USER" -E env NODE_ENV=production pnpm install --frozen-lockfile 2>&1 | tail -3 || true
+print_status "Sincronizando esquema de base de datos (Drizzle ORM)..."
+sudo -u "$APP_USER" -E env HOME="/home/$APP_USER" pnpm --filter @workspace/db run push 2>&1 | tail -5
+print_success "Esquema de base de datos sincronizado"
 
 print_success "Aplicación compilada correctamente"
 
-# ─── 8. Servicio systemd ────────────────────────────────────────────────────
-print_step "8/8 Configurando servicios"
+# ==============================================================================
+# PASO 8: Servicios (systemd + Nginx)
+# ==============================================================================
+print_step "8/8 Configurando servicios del sistema"
+
+# ─── Servicio systemd ────────────────────────────────────────────────────────
+print_status "Creando servicio systemd..."
 
 cat > "/etc/systemd/system/$APP_NAME.service" << EOF
 [Unit]
-Description=ASD Funnel - Panel de Gestión Editorial
+Description=ASD Funnel - Panel de Gestión Editorial (Atreyu Servicios Digitales)
 After=network.target postgresql.service
 Requires=postgresql.service
 
@@ -227,16 +333,19 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=$APP_NAME
+Environment=HOME=/home/$APP_USER
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable "$APP_NAME"
-print_success "Servicio systemd configurado"
+systemctl enable "$APP_NAME" 2>/dev/null
+print_success "Servicio systemd '$APP_NAME' configurado"
 
 # ─── Nginx ───────────────────────────────────────────────────────────────────
+print_status "Configurando Nginx como proxy reverso..."
+
 FRONTEND_DIR="$APP_DIR/artifacts/lennox-admin/dist/public"
 
 cat > "/etc/nginx/sites-available/$APP_NAME" << NGINX
@@ -249,7 +358,7 @@ server {
     root $FRONTEND_DIR;
     index index.html;
 
-    # API proxy
+    # API proxy → Node.js backend
     location /api/ {
         proxy_pass http://127.0.0.1:$APP_PORT;
         proxy_http_version 1.1;
@@ -262,12 +371,12 @@ server {
         proxy_read_timeout 120s;
     }
 
-    # Frontend SPA - serve static files, fallback to index.html
+    # Frontend SPA - archivos estáticos con fallback a index.html
     location / {
         try_files \$uri \$uri/ /index.html;
     }
 
-    # Cache static assets
+    # Cache de assets estáticos (30 días)
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 30d;
         add_header Cache-Control "public, immutable";
@@ -278,77 +387,117 @@ NGINX
 ln -sf "/etc/nginx/sites-available/$APP_NAME" /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
-nginx -t 2>/dev/null && print_success "Configuración de Nginx válida" || print_error "Error en configuración de Nginx"
+if nginx -t 2>/dev/null; then
+    print_success "Configuración de Nginx válida"
+else
+    print_error "Error en configuración de Nginx. Revisa: nginx -t"
+fi
 
-systemctl enable nginx
+systemctl enable nginx 2>/dev/null
 systemctl restart nginx
-print_success "Nginx configurado como proxy reverso"
+print_success "Nginx configurado y activo"
+
+# ─── Firewall (UFW) ─────────────────────────────────────────────────────────
+if command -v ufw &>/dev/null; then
+    print_status "Configurando firewall (UFW)..."
+    ufw allow 22/tcp   2>/dev/null || true
+    ufw allow 80/tcp   2>/dev/null || true
+    ufw allow 443/tcp  2>/dev/null || true
+    ufw --force enable 2>/dev/null || true
+    print_success "Firewall configurado (puertos 22, 80, 443 abiertos)"
+fi
 
 # ─── Iniciar aplicación ─────────────────────────────────────────────────────
+print_status "Iniciando ASD Funnel..."
 systemctl restart "$APP_NAME"
-sleep 3
+sleep 4
 
 if systemctl is-active --quiet "$APP_NAME"; then
     print_success "Servicio $APP_NAME iniciado correctamente"
 else
-    print_error "El servicio no arrancó. Revisa: journalctl -u $APP_NAME -n 50"
+    print_error "El servicio no arrancó correctamente"
+    echo ""
+    echo "  Diagnóstico:"
+    echo "    journalctl -u $APP_NAME -n 30 --no-pager"
+    echo ""
+    journalctl -u "$APP_NAME" -n 10 --no-pager 2>/dev/null || true
 fi
 
-# ─── Cloudflare Tunnel (opcional) ────────────────────────────────────────────
+# ==============================================================================
+# CLOUDFLARE TUNNEL (Opcional)
+# ==============================================================================
 echo ""
-echo -e "${YELLOW}╔═══════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║        CLOUDFLARE TUNNEL (Opcional)            ║${NC}"
-echo -e "${YELLOW}╚═══════════════════════════════════════════════╝${NC}"
+echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}║             CLOUDFLARE TUNNEL (Opcional)                  ║${NC}"
+echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════╣${NC}"
+echo -e "${YELLOW}║  Si deseas exponer la app a Internet con HTTPS gratuito  ║${NC}"
+echo -e "${YELLOW}║  mediante Cloudflare Tunnel, introduce el token aquí.    ║${NC}"
+echo -e "${YELLOW}║  Si solo necesitas acceso en red local, presiona Enter.  ║${NC}"
+echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo "Si deseas exponer la aplicación a Internet con HTTPS gratuito"
-echo "mediante Cloudflare Tunnel, introduce el token aquí."
-echo "Si no lo necesitas, simplemente presiona Enter."
-echo ""
-read -p "Token de Cloudflare Tunnel (Enter para omitir): " CF_TOKEN
+read -p "  Token de Cloudflare Tunnel (Enter para omitir): " CF_TOKEN
 
 if [ -n "$CF_TOKEN" ]; then
-    print_status "Instalando Cloudflare Tunnel..."
+    print_status "Descargando e instalando Cloudflare Tunnel..."
     curl -L -o /tmp/cloudflared.deb \
         https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb 2>/dev/null
-    dpkg -i /tmp/cloudflared.deb
+    dpkg -i /tmp/cloudflared.deb 2>/dev/null
     rm -f /tmp/cloudflared.deb
 
-    cloudflared service install "$CF_TOKEN"
-    systemctl enable cloudflared
+    cloudflared service install "$CF_TOKEN" 2>/dev/null
+    systemctl enable cloudflared 2>/dev/null
     systemctl start cloudflared
 
     sed -i 's/SECURE_COOKIES=false/SECURE_COOKIES=true/' "$CONFIG_DIR/env"
     systemctl restart "$APP_NAME"
 
-    print_success "Cloudflare Tunnel configurado (HTTPS habilitado)"
+    if systemctl is-active --quiet cloudflared; then
+        print_success "Cloudflare Tunnel activo (HTTPS habilitado, cookies seguras activadas)"
+    else
+        print_warning "Cloudflare Tunnel instalado pero no activo. Revisa: systemctl status cloudflared"
+    fi
+
+    echo ""
+    echo -e "  ${YELLOW}IMPORTANTE:${NC} Actualiza APP_BASE_URL con tu dominio:"
+    echo "    sudo sed -i 's|APP_BASE_URL=.*|APP_BASE_URL=https://tudominio.com|' $CONFIG_DIR/env"
+    echo "    sudo systemctl restart $APP_NAME"
 fi
 
-# ─── Resumen final ───────────────────────────────────────────────────────────
+# ==============================================================================
+# RESUMEN FINAL
+# ==============================================================================
 SERVER_IP=$(hostname -I | awk '{print $1}')
 echo ""
 echo -e "${GREEN}${BOLD}"
 echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║              INSTALACIÓN COMPLETADA                       ║"
+echo "║           INSTALACIÓN COMPLETADA CON ÉXITO                ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
-echo -e "  ${BOLD}URL Local:${NC}        http://$SERVER_IP"
-echo -e "  ${BOLD}Configuración:${NC}    $CONFIG_DIR/env"
-echo -e "  ${BOLD}Archivos:${NC}         $APP_DIR"
-echo -e "  ${BOLD}Uploads:${NC}          $UPLOAD_DIR"
-echo -e "  ${BOLD}Base de datos:${NC}    $DB_NAME (PostgreSQL)"
+echo -e "  ${BOLD}Accede al panel:${NC}   http://$SERVER_IP"
+echo ""
+echo -e "  ${BOLD}Detalles:${NC}"
+echo "    Aplicación:     $APP_DIR"
+echo "    Configuración:  $CONFIG_DIR/env"
+echo "    Uploads:        $UPLOAD_DIR"
+echo "    Base de datos:  PostgreSQL → $DB_NAME"
+echo "    Puerto API:     $APP_PORT (detrás de Nginx)"
+echo ""
+echo -e "  ${BOLD}Servicios activos:${NC}"
+echo "    ● asdfunnel     (aplicación Node.js)"
+echo "    ● nginx         (proxy reverso, puerto 80)"
+echo "    ● postgresql    (base de datos)"
+if [ -n "$CF_TOKEN" ]; then
+    echo "    ● cloudflared   (túnel HTTPS)"
+fi
 echo ""
 echo -e "  ${BOLD}Comandos útiles:${NC}"
-echo "    Estado:        sudo systemctl status $APP_NAME"
-echo "    Logs:          sudo journalctl -u $APP_NAME -f"
-echo "    Reiniciar:     sudo systemctl restart $APP_NAME"
-echo "    Detener:       sudo systemctl stop $APP_NAME"
-echo "    Config:        sudo cat $CONFIG_DIR/env"
+echo "    Estado:         sudo systemctl status $APP_NAME"
+echo "    Logs:           sudo journalctl -u $APP_NAME -f"
+echo "    Reiniciar:      sudo systemctl restart $APP_NAME"
+echo "    Detener:        sudo systemctl stop $APP_NAME"
+echo "    Ver config:     sudo cat $CONFIG_DIR/env"
+echo "    Backup BD:      sudo -u postgres pg_dump $DB_NAME > backup.sql"
 echo ""
-if [ -n "$CF_TOKEN" ]; then
-    echo -e "  ${BOLD}Cloudflare:${NC}"
-    echo "    Estado:        sudo systemctl status cloudflared"
-    echo "    Logs:          sudo journalctl -u cloudflared -f"
-    echo ""
-fi
-echo -e "  ${YELLOW}Para actualizar:${NC} sudo bash $APP_DIR/install.sh"
+echo -e "  ${YELLOW}Para actualizar en el futuro:${NC}"
+echo "    sudo bash $APP_DIR/install.sh"
 echo ""

@@ -36,26 +36,35 @@ Sistema completo de gestión de publicaciones digitales para thrillers psicológ
 
 ## Instalacion Rapida
 
-Ejecuta el script autoinstalador como root:
+En un **servidor Ubuntu recien instalado** (sin nada configurado), ejecuta estos 2 comandos:
 
 ```bash
-sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/atreyu1968/ASDFunnel/main/install.sh)"
+apt-get update && apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/atreyu1968/ASDFunnel/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
 ```
 
-O si ya tienes el repositorio clonado:
+El script se encarga de **todo** automaticamente:
+1. Actualiza el sistema e instala paquetes base (curl, git, build-essential, openssl)
+2. Instala Node.js 20 y pnpm 9
+3. Instala y configura PostgreSQL (crea usuario y base de datos)
+4. Clona el repositorio desde GitHub
+5. Compila frontend (React + Vite) y backend (Express + esbuild)
+6. Sincroniza el esquema de base de datos (Drizzle ORM)
+7. Configura systemd para auto-inicio y auto-reinicio
+8. Configura Nginx como proxy reverso (puerto 80)
+9. Configura firewall (UFW) abriendo solo puertos 22, 80, 443
+10. Opcionalmente instala Cloudflare Tunnel para HTTPS gratuito
+
+### Actualizar
+
+Si ya tienes una instalacion funcionando:
 
 ```bash
-cd /var/www/asdfunnel
-sudo bash install.sh
+sudo bash /var/www/asdfunnel/install.sh
 ```
 
-El instalador:
-1. Instala Node.js 20, pnpm, PostgreSQL y Nginx
-2. Crea la base de datos y usuario dedicado
-3. Compila frontend y backend
-4. Configura systemd para auto-inicio
-5. Configura Nginx como proxy reverso
-6. Opcionalmente instala Cloudflare Tunnel
+El script detecta la instalacion existente, preserva toda tu configuracion
+(credenciales de BD, secretos, variables) y solo actualiza el codigo y recompila.
 
 ---
 
