@@ -1,17 +1,63 @@
-import { useQuery } from "@tanstack/react-query";
-import { 
-  useGetFunnelOverview, 
-  getGetFunnelOverviewQueryKey 
+import { useState, useMemo } from "react";
+import {
+  useGetFunnelOverview,
+  getGetFunnelOverviewQueryKey,
+  useListAuthors,
+  useListSeries,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Filter, ArrowRight, ArrowDown } from "lucide-react";
 
+const languageLabels: Record<string, string> = {
+  es: "Español",
+  en: "English",
+  fr: "Français",
+  de: "Deutsch",
+  it: "Italiano",
+  pt: "Português",
+};
+
 export default function Funnel() {
+  const [filterLanguage, setFilterLanguage] = useState<string>("all");
+  const [filterAuthor, setFilterAuthor] = useState<string>("all");
+  const [filterSeries, setFilterSeries] = useState<string>("all");
+
   const { data: funnelData, isLoading } = useGetFunnelOverview({
     query: { queryKey: getGetFunnelOverviewQueryKey() }
   });
+
+  const { data: authors } = useListAuthors();
+  const { data: seriesList } = useListSeries();
+
+  const filteredStages = useMemo(() => {
+    if (!funnelData?.stages) return [];
+    return funnelData.stages.map(stage => {
+      const filtered = stage.books.filter(book => {
+        if (filterLanguage !== "all" && book.language !== filterLanguage) return false;
+        if (filterAuthor !== "all" && book.authorPenName !== filterAuthor) return false;
+        if (filterSeries !== "all" && book.seriesName !== filterSeries) return false;
+        return true;
+      });
+      return { ...stage, books: filtered, count: filtered.length };
+    });
+  }, [funnelData, filterLanguage, filterAuthor, filterSeries]);
+
+  const filteredSeriesList = useMemo(() => {
+    if (!seriesList) return [];
+    if (filterAuthor === "all") return seriesList;
+    return seriesList.filter(s => s.authorPenName === filterAuthor);
+  }, [seriesList, filterAuthor]);
+
+  const hasActiveFilters = filterLanguage !== "all" || filterAuthor !== "all" || filterSeries !== "all";
 
   const getStageColor = (role: string) => {
     switch (role) {
@@ -39,14 +85,62 @@ export default function Funnel() {
         <p className="text-muted-foreground">Visualización del flujo de lectores a través del catálogo.</p>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtrar:
+        </div>
+        <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Idioma" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los idiomas</SelectItem>
+            {Object.entries(languageLabels).map(([code, label]) => (
+              <SelectItem key={code} value={code}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterAuthor} onValueChange={(v) => { setFilterAuthor(v); setFilterSeries("all"); }}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Autor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los autores</SelectItem>
+            {authors?.map(a => (
+              <SelectItem key={a.id} value={a.penName}>{a.penName}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSeries} onValueChange={setFilterSeries}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Serie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las series</SelectItem>
+            {filteredSeriesList.map(s => (
+              <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <button
+            onClick={() => { setFilterLanguage("all"); setFilterAuthor("all"); setFilterSeries("all"); }}
+            className="text-xs text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-48 w-full" />
         </div>
-      ) : funnelData && funnelData.stages ? (
+      ) : filteredStages.length > 0 ? (
         <div className="relative flex flex-col md:flex-row gap-6 items-stretch w-full justify-between">
-          {funnelData.stages.map((stage, index) => (
+          {filteredStages.map((stage, index) => (
             <div key={stage.role} className="flex-1 flex flex-col min-w-0 z-10 w-full md:w-auto">
               <Card className={`h-full border-t-4 shadow-md ${getStageColor(stage.role).replace('bg-', 'border-t-').split(' ')[0]}`}>
                 <CardHeader className="pb-3">
@@ -69,7 +163,12 @@ export default function Funnel() {
                       stage.books.map(book => (
                         <div key={book.id} className="p-3 bg-muted/30 rounded-md border text-sm flex flex-col gap-2">
                           <div className="font-medium line-clamp-1">{book.title}</div>
-                          <div className="text-xs text-muted-foreground">{book.seriesName}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span>{book.seriesName}</span>
+                            <span>•</span>
+                            <span>{book.authorPenName}</span>
+                            <Badge variant="outline" className="text-[10px] uppercase ml-auto">{book.language}</Badge>
+                          </div>
                           <div className="flex items-center justify-between mt-1">
                             {getPricingBadge(book.pricingStrategy, book.price)}
                             <span className="text-[10px] uppercase tracking-wider opacity-70">{book.status}</span>
@@ -84,12 +183,12 @@ export default function Funnel() {
                   </div>
                 </CardContent>
               </Card>
-              {index < funnelData.stages.length - 1 && (
-                <div className="hidden md:flex absolute top-1/2 -mt-3 -mr-3 right-0 transform translate-x-full text-muted-foreground z-0" style={{left: `calc(${(index + 1) * (100 / funnelData.stages.length)}% - 12px)`}}>
+              {index < filteredStages.length - 1 && (
+                <div className="hidden md:flex absolute top-1/2 -mt-3 -mr-3 right-0 transform translate-x-full text-muted-foreground z-0" style={{left: `calc(${(index + 1) * (100 / filteredStages.length)}% - 12px)`}}>
                   <ArrowRight className="h-6 w-6 text-border" />
                 </div>
               )}
-              {index < funnelData.stages.length - 1 && (
+              {index < filteredStages.length - 1 && (
                 <div className="flex md:hidden justify-center py-2 text-muted-foreground">
                   <ArrowDown className="h-6 w-6 text-border" />
                 </div>

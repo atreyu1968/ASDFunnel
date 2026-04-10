@@ -1544,6 +1544,7 @@ export const GetFunnelOverviewResponse = zod.object({
           id: zod.number(),
           title: zod.string(),
           seriesName: zod.string(),
+          authorPenName: zod.string(),
           language: zod.string(),
           status: zod.string(),
           pricingStrategy: zod.string(),

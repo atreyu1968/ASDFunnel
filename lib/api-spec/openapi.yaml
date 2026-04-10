@@ -2140,6 +2140,8 @@ components:
                       type: string
                     seriesName:
                       type: string
+                    authorPenName:
+                      type: string
                     language:
                       type: string
                     status:
@@ -2149,7 +2151,7 @@ components:
                     price:
                       type: number
                       nullable: true
-                  required: [id, title, seriesName, language, status, pricingStrategy]
+                  required: [id, title, seriesName, authorPenName, language, status, pricingStrategy]
             required: [role, label, count, books]
       required: [stages]
 

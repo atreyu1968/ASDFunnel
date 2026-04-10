@@ -122,6 +122,7 @@ router.get("/dashboard/funnel-overview", async (_req, res): Promise<void> => {
           id: booksTable.id,
           title: booksTable.title,
           seriesName: seriesTable.name,
+          authorPenName: authorsTable.penName,
           language: booksTable.language,
           status: booksTable.status,
           pricingStrategy: booksTable.pricingStrategy,
@@ -129,6 +130,7 @@ router.get("/dashboard/funnel-overview", async (_req, res): Promise<void> => {
         })
         .from(booksTable)
         .innerJoin(seriesTable, eq(booksTable.seriesId, seriesTable.id))
+        .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
         .where(eq(booksTable.funnelRole, role));
 
       return { role, label, count: books.length, books };

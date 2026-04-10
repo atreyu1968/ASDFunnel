@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Library, GitMerge } from "lucide-react";
+import { Plus, Edit2, Trash2, Library, GitMerge, Filter } from "lucide-react";
 
 const seriesSchema = z.object({
   name: z.string().min(1, "El nombre de la serie es requerido"),
@@ -86,6 +86,7 @@ export default function Series() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(null);
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
+  const [filterAuthor, setFilterAuthor] = useState<string>("all");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -93,8 +94,13 @@ export default function Series() {
   const listParams: Record<string, string | undefined> = {};
   if (filterLanguage !== "all") listParams.language = filterLanguage;
 
-  const { data: seriesList, isLoading } = useListSeries(listParams, {
+  const { data: allSeries, isLoading } = useListSeries(listParams, {
     query: { queryKey: getListSeriesQueryKey(listParams) }
+  });
+
+  const seriesList = allSeries?.filter(s => {
+    if (filterAuthor !== "all" && s.authorPenName !== filterAuthor) return false;
+    return true;
   });
 
   const { data: authors } = useListAuthors({
@@ -363,10 +369,14 @@ export default function Series() {
         </Dialog>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtrar:
+        </div>
         <Select value={filterLanguage} onValueChange={setFilterLanguage}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Todos los idiomas" />
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Idioma" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los idiomas</SelectItem>
@@ -375,6 +385,25 @@ export default function Series() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={filterAuthor} onValueChange={setFilterAuthor}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Autor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los autores</SelectItem>
+            {authors?.map(a => (
+              <SelectItem key={a.id} value={a.penName}>{a.penName}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(filterLanguage !== "all" || filterAuthor !== "all") && (
+          <button
+            onClick={() => { setFilterLanguage("all"); setFilterAuthor("all"); }}
+            className="text-xs text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {isLoading ? (

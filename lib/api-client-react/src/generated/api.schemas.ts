@@ -720,6 +720,7 @@ export type FunnelOverviewStagesItemBooksItem = {
   id: number;
   title: string;
   seriesName: string;
+  authorPenName: string;
   language: string;
   status: string;
   pricingStrategy: string;

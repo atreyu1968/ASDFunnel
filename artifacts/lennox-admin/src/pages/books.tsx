@@ -12,7 +12,9 @@ import {
   useUpdateBook,
   useDeleteBook,
   useListSeries,
-  getListSeriesQueryKey
+  getListSeriesQueryKey,
+  useListAuthors,
+  getListAuthorsQueryKey,
 } from "@workspace/api-client-react";
 import { 
   Card, 
@@ -97,23 +99,37 @@ export default function Books() {
   
   const [filterSeries, setFilterSeries] = useState<number | "all">("all");
   const [filterStatus, setFilterStatus] = useState<string | "all">("all");
+  const [filterLanguage, setFilterLanguage] = useState<string>("all");
+  const [filterAuthor, setFilterAuthor] = useState<string>("all");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: books, isLoading } = useListBooks({
-    ...(filterSeries !== "all" ? { seriesId: filterSeries } : {}),
-    ...(filterStatus !== "all" ? { status: filterStatus as any } : {})
-  }, {
-    query: { queryKey: getListBooksQueryKey({
-      ...(filterSeries !== "all" ? { seriesId: filterSeries } : {}),
-      ...(filterStatus !== "all" ? { status: filterStatus as any } : {})
-    }) }
+  const queryParams: Record<string, any> = {};
+  if (filterSeries !== "all") queryParams.seriesId = filterSeries;
+  if (filterStatus !== "all") queryParams.status = filterStatus;
+  if (filterLanguage !== "all") queryParams.language = filterLanguage;
+
+  const { data: allBooks, isLoading } = useListBooks(queryParams, {
+    query: { queryKey: getListBooksQueryKey(queryParams) }
+  });
+
+  const books = allBooks?.filter(b => {
+    if (filterAuthor !== "all" && b.authorPenName !== filterAuthor) return false;
+    return true;
   });
 
   const { data: seriesList } = useListSeries(undefined, {
     query: { queryKey: getListSeriesQueryKey() }
   });
+
+  const { data: authors } = useListAuthors({
+    query: { queryKey: getListAuthorsQueryKey() }
+  });
+
+  const filteredSeriesList = filterAuthor === "all"
+    ? seriesList
+    : seriesList?.filter(s => s.authorPenName === filterAuthor);
 
   const createBook = useCreateBook();
   const updateBook = useUpdateBook();
@@ -437,25 +453,50 @@ export default function Books() {
         </Dialog>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 bg-card p-4 rounded-lg border">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filtros:</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtrar:
         </div>
+        <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Idioma" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los idiomas</SelectItem>
+            <SelectItem value="es">Español</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="fr">Français</SelectItem>
+            <SelectItem value="de">Deutsch</SelectItem>
+            <SelectItem value="it">Italiano</SelectItem>
+            <SelectItem value="pt">Português</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterAuthor} onValueChange={(v) => { setFilterAuthor(v); setFilterSeries("all"); }}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Autor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los autores</SelectItem>
+            {authors?.map(a => (
+              <SelectItem key={a.id} value={a.penName}>{a.penName}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={filterSeries.toString()} onValueChange={(v) => setFilterSeries(v === "all" ? "all" : Number(v))}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Todas las series" />
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Serie" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas las series</SelectItem>
-            {seriesList?.map(s => (
+            {filteredSeriesList?.map(s => (
               <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Todos los estados" />
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
@@ -466,6 +507,14 @@ export default function Books() {
             <SelectItem value="published">Publicado</SelectItem>
           </SelectContent>
         </Select>
+        {(filterLanguage !== "all" || filterAuthor !== "all" || filterSeries !== "all" || filterStatus !== "all") && (
+          <button
+            onClick={() => { setFilterLanguage("all"); setFilterAuthor("all"); setFilterSeries("all"); setFilterStatus("all"); }}
+            className="text-xs text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {isLoading ? (
