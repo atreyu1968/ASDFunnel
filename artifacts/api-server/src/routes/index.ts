@@ -13,6 +13,7 @@ import captureRouter from "./capture";
 import confirmationRouter from "./confirmation";
 import settingsRouter from "./settings";
 import storageRouter from "./storage";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(captureRouter);
 router.use(confirmationRouter);
 router.use(settingsRouter);
 router.use(storageRouter);
+router.use(aiRouter);
 
 export default router;

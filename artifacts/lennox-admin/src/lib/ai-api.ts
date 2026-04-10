@@ -1,0 +1,67 @@
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+export async function aiGenerateEmail(bookId: number, templateType: string, language: string) {
+  const res = await fetch(`${API_BASE}api/ai/generate-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookId, templateType, language }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar email");
+  return data;
+}
+
+export async function aiTranslate(content: Record<string, any>, fromLanguage: string, toLanguage: string, contentType: "landing_page" | "email_template") {
+  const res = await fetch(`${API_BASE}api/ai/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, fromLanguage, toLanguage, contentType }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al traducir");
+  return data.translated;
+}
+
+export async function aiGenerateKdp(bookId: number) {
+  const res = await fetch(`${API_BASE}api/ai/generate-kdp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar KDP");
+  return data;
+}
+
+export async function aiGenerateSequence(bookId: number, language: string, emailCount?: number) {
+  const res = await fetch(`${API_BASE}api/ai/generate-sequence`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookId, language, emailCount }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar secuencia");
+  return data.sequence;
+}
+
+export async function aiGenerateSubjects(templateId: number, count?: number) {
+  const res = await fetch(`${API_BASE}api/ai/generate-subjects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ templateId, count }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar asuntos");
+  return data.subjects;
+}
+
+export async function aiGenerateSeriesSummary(seriesId: number) {
+  const res = await fetch(`${API_BASE}api/ai/generate-series-summary`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seriesId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar resumen");
+  return data;
+}

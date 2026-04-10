@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, booksTable, seriesTable, authorsTable, activityTable, landingPagesTable, emailSettingsTable } from "@workspace/db";
+import { db, booksTable, seriesTable, authorsTable, activityTable, landingPagesTable } from "@workspace/db";
+import { callAi, parseJsonResponse, LANG_NAMES, AiNotConfiguredError, AiApiError } from "../lib/ai";
 import {
   CreateBookBody,
   GetBookParams,
@@ -312,15 +313,8 @@ router.post("/books/:id/upload-manuscript", async (req, res): Promise<void> => {
 
     const excerpt = text.slice(0, 8000);
 
-    const [settings] = await db.select().from(emailSettingsTable).limit(1);
-    if (!settings?.aiApiKey || !settings?.aiProvider) {
-      res.status(400).json({ error: "La configuración de IA no está configurada. Ve a Configuración para añadir tu API key de DeepSeek." });
-      return;
-    }
-
     const lang = book.books.language || "es";
-    const langNames: Record<string, string> = { es: "español", en: "English", fr: "français", de: "Deutsch", it: "italiano", pt: "português" };
-    const langName = langNames[lang] || lang;
+    const langName = LANG_NAMES[lang] || lang;
 
     const prompt = `Eres un experto en marketing editorial de thrillers psicológicos. Analiza este extracto de manuscrito y genera contenido para una landing page de captación de emails.
 
@@ -346,44 +340,8 @@ Genera en ${langName} un JSON con estos campos exactos:
 
 Responde SOLO con el JSON, sin markdown ni explicaciones.`;
 
-    const baseUrl = settings.aiProvider === "deepseek" 
-      ? "https://api.deepseek.com" 
-      : settings.aiProvider === "openai" 
-        ? "https://api.openai.com" 
-        : `https://api.${settings.aiProvider}.com`;
-
-    const aiResponse = await fetch(`${baseUrl}/v1/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${settings.aiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: settings.aiModel || "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      req.log.error({ status: aiResponse.status, body: errText }, "AI API error");
-      res.status(500).json({ error: `Error de la API de IA (${aiResponse.status}). Verifica tu API key y modelo en Configuración.` });
-      return;
-    }
-
-    const aiResult = await aiResponse.json() as any;
-    const content = aiResult.choices?.[0]?.message?.content || "";
-
-    let generated: any;
-    try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      generated = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } catch {
-      res.status(500).json({ error: "No se pudo parsear la respuesta de la IA" });
-      return;
-    }
+    const content = await callAi(prompt);
+    const generated = parseJsonResponse(content);
 
     let landingPageId: number | null = null;
     if (generated.title && generated.description) {
@@ -411,7 +369,17 @@ Responde SOLO con el JSON, sin markdown ni explicaciones.`;
       callToAction: generated.callToAction || "",
     });
   } catch (error: any) {
-    res.status(500).json({ error: `Error procesando manuscrito: ${error.message}` });
+    if (error instanceof AiNotConfiguredError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    if (error instanceof AiApiError) {
+      req.log.error({ status: error.status }, "AI API error");
+      res.status(500).json({ error: `Error de la API de IA (${error.status}). Verifica tu API key y modelo en Configuración.` });
+      return;
+    }
+    req.log.error({ err: error }, "Error processing manuscript");
+    res.status(500).json({ error: "Error procesando manuscrito" });
   }
 });
 

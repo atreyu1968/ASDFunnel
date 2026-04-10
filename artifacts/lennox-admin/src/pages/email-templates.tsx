@@ -13,6 +13,7 @@ import {
   useDeleteEmailTemplate,
   useListMailingLists,
   getListMailingListsQueryKey,
+  useListBooks,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,8 +56,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Mail, FileCode, Eye } from "lucide-react";
+import { Plus, Edit2, Trash2, Mail, FileCode, Eye, Brain, Languages, Sparkles, Loader2, Copy, Check } from "lucide-react";
 import type { EmailTemplate } from "@workspace/api-client-react";
+import { aiGenerateEmail, aiTranslate, aiGenerateSubjects, aiGenerateSequence } from "@/lib/ai-api";
 
 const templateTypeLabels: Record<string, string> = {
   welcome: "Bienvenida",
@@ -82,6 +84,10 @@ const templateSchema = z.object({
 
 type TemplateFormValues = z.infer<typeof templateSchema>;
 
+const languageLabels: Record<string, string> = {
+  es: "Español", en: "English", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano",
+};
+
 export default function EmailTemplates() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -89,6 +95,19 @@ export default function EmailTemplates() {
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [previewTab, setPreviewTab] = useState<"html" | "text" | "code">("html");
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
+  const [subjectVariants, setSubjectVariants] = useState<any[] | null>(null);
+  const [subjectTemplateId, setSubjectTemplateId] = useState<number | null>(null);
+  const [translateTarget, setTranslateTarget] = useState<{ template: EmailTemplate; lang: string } | null>(null);
+  const [sequenceResult, setSequenceResult] = useState<any[] | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
+  const [aiBookId, setAiBookId] = useState<number>(0);
+  const [aiTemplateType, setAiTemplateType] = useState<string>("welcome");
+  const [aiLang, setAiLang] = useState<string>("es");
+  const [sequenceOpen, setSequenceOpen] = useState(false);
+  const [seqBookId, setSeqBookId] = useState<number>(0);
+  const [seqLang, setSeqLang] = useState<string>("es");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -103,6 +122,8 @@ export default function EmailTemplates() {
   );
 
   const { data: mailingLists } = useListMailingLists(undefined, { query: { queryKey: getListMailingListsQueryKey() } });
+
+  const { data: books } = useListBooks(undefined, { query: { queryKey: ["books-for-ai"] } });
 
   const createTemplate = useCreateEmailTemplate();
   const updateTemplate = useUpdateEmailTemplate();
@@ -183,6 +204,114 @@ export default function EmailTemplates() {
     });
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiBookId) return;
+    setAiLoading("generate");
+    try {
+      const result = await aiGenerateEmail(aiBookId, aiTemplateType, aiLang);
+      form.reset({
+        name: result.name,
+        subject: result.subject,
+        bodyHtml: result.bodyHtml,
+        bodyText: result.bodyText || "",
+        language: aiLang,
+        templateType: aiTemplateType as TemplateFormValues["templateType"],
+        mailingListId: null,
+        isActive: true,
+      });
+      setAiGenerateOpen(false);
+      setEditingId(null);
+      setIsCreateOpen(true);
+      toast({ title: "Email generado con IA", description: result.subject });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiSubjects = async (templateId: number) => {
+    setAiLoading("subjects");
+    setSubjectTemplateId(templateId);
+    try {
+      const subjects = await aiGenerateSubjects(templateId, 5);
+      setSubjectVariants(subjects);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleTranslate = async (template: EmailTemplate, toLang: string) => {
+    setAiLoading("translate");
+    try {
+      const translated = await aiTranslate(
+        { name: template.name, subject: template.subject, bodyHtml: template.bodyHtml, bodyText: template.bodyText },
+        template.language,
+        toLang,
+        "email_template"
+      );
+      form.reset({
+        name: translated.name || template.name,
+        subject: translated.subject || template.subject,
+        bodyHtml: translated.bodyHtml || template.bodyHtml,
+        bodyText: translated.bodyText || template.bodyText || "",
+        language: toLang,
+        templateType: template.templateType as TemplateFormValues["templateType"],
+        mailingListId: null,
+        isActive: true,
+      });
+      setEditingId(null);
+      setIsCreateOpen(true);
+      toast({ title: `Traducido a ${languageLabels[toLang] || toLang}` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setAiLoading(null);
+      setTranslateTarget(null);
+    }
+  };
+
+  const handleGenerateSequence = async () => {
+    if (!seqBookId) return;
+    setAiLoading("sequence");
+    try {
+      const sequence = await aiGenerateSequence(seqBookId, seqLang, 5);
+      setSequenceResult(sequence);
+      toast({ title: `Secuencia de ${sequence.length} emails generada` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleSaveSequenceEmail = (email: any) => {
+    createTemplate.mutate({
+      data: {
+        name: email.name,
+        subject: email.subject,
+        bodyHtml: email.bodyHtml,
+        bodyText: email.bodyText || "",
+        language: seqLang,
+        templateType: email.templateType || "welcome",
+        isActive: true,
+      }
+    }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListEmailTemplatesQueryKey() });
+        toast({ title: `"${email.name}" guardado` });
+      }
+    });
+  };
+
+  const copyToClipboard = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -190,16 +319,25 @@ export default function EmailTemplates() {
           <h2 className="text-3xl font-bold tracking-tight">Plantillas de Email</h2>
           <p className="text-muted-foreground">Plantillas de correo separadas por tipo e idioma.</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={(open) => {
-          setIsCreateOpen(open);
-          if (!open) {
-            setEditingId(null);
-            form.reset();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setSequenceOpen(true)} disabled={aiLoading === "sequence"}>
+            {aiLoading === "sequence" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Secuencia IA
+          </Button>
+          <Button variant="outline" onClick={() => setAiGenerateOpen(true)} disabled={!!aiLoading}>
+            {aiLoading === "generate" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
+            Generar con IA
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) {
+              setEditingId(null);
+              form.reset();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Nueva Plantilla</Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Plantilla" : "Crear Plantilla de Email"}</DialogTitle>
@@ -343,6 +481,7 @@ export default function EmailTemplates() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -397,7 +536,20 @@ export default function EmailTemplates() {
                       <Badge variant="outline" className="uppercase">{template.language}</Badge>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                    <Button variant="ghost" size="icon" onClick={() => handleAiSubjects(template.id)} title="A/B Asuntos IA" disabled={aiLoading === "subjects"}>
+                      {aiLoading === "subjects" && subjectTemplateId === template.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    </Button>
+                    <Select onValueChange={(lang) => handleTranslate(template, lang)}>
+                      <SelectTrigger className="w-8 h-8 p-0 border-0 bg-transparent justify-center" title="Traducir">
+                        <Languages className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(languageLabels).filter(([k]) => k !== template.language).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button variant="ghost" size="icon" onClick={() => setPreviewTemplate(template)} title="Vista previa">
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -515,6 +667,150 @@ export default function EmailTemplates() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={aiGenerateOpen} onOpenChange={setAiGenerateOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> Generar Email con IA</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Libro</label>
+              <Select onValueChange={(v) => setAiBookId(Number(v))} value={aiBookId ? aiBookId.toString() : undefined}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar libro" /></SelectTrigger>
+                <SelectContent>
+                  {books?.map((b: any) => (
+                    <SelectItem key={b.id} value={b.id.toString()}>#{b.bookNumber} {b.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Tipo</label>
+                <Select onValueChange={setAiTemplateType} value={aiTemplateType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(templateTypeLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Idioma</label>
+                <Select onValueChange={setAiLang} value={aiLang}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(languageLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button onClick={handleAiGenerate} disabled={!aiBookId || aiLoading === "generate"} className="w-full">
+              {aiLoading === "generate" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
+              Generar Email
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sequenceOpen} onOpenChange={(open) => { setSequenceOpen(open); if (!open) setSequenceResult(null); }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Generar Secuencia de Nurturing</DialogTitle>
+          </DialogHeader>
+          {!sequenceResult ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Libro</label>
+                <Select onValueChange={(v) => setSeqBookId(Number(v))} value={seqBookId ? seqBookId.toString() : undefined}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar libro" /></SelectTrigger>
+                  <SelectContent>
+                    {books?.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id.toString()}>#{b.bookNumber} {b.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Idioma</label>
+                <Select onValueChange={setSeqLang} value={seqLang}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(languageLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleGenerateSequence} disabled={!seqBookId || aiLoading === "sequence"} className="w-full">
+                {aiLoading === "sequence" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generar 5 emails de secuencia
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sequenceResult.map((email: any, i: number) => (
+                <Card key={i} className="bg-muted/30">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Día {email.day}</Badge>
+                        <span className="font-medium text-sm">{email.name}</span>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => handleSaveSequenceEmail(email)}>
+                        Guardar
+                      </Button>
+                    </div>
+                    <div className="text-xs text-muted-foreground">Asunto: {email.subject}</div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Button variant="outline" className="w-full" onClick={() => {
+                sequenceResult.forEach((email: any) => handleSaveSequenceEmail(email));
+              }}>
+                Guardar todos ({sequenceResult.length})
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!subjectVariants} onOpenChange={() => { setSubjectVariants(null); setSubjectTemplateId(null); }}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Variantes de Asunto A/B</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {subjectVariants?.map((v: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{v.subject}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">{v.technique}</Badge>
+                    {v.reasoning}
+                  </div>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => copyToClipboard(v.subject, i)}>
+                  {copiedIdx === i ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {aiLoading === "translate" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card p-6 rounded-lg shadow-xl flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span>Traduciendo con IA...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

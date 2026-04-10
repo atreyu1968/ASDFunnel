@@ -58,12 +58,17 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - Flow: browser → `POST /api/storage/uploads/request-url` → PUT to GCS → objectPath saved in DB
 - Served via `/api/storage/objects/{path}`
 
-### AI Landing Page Generation
-- .docx manuscripts parsed with `mammoth` library
-- Text sent to DeepSeek/OpenAI via `/v1/chat/completions` API
-- AI generates: title, description, hook, CTA text, SEO meta tags
-- Output saved directly to `landing_pages` table
-- Endpoint: `POST /api/books/:id/upload-manuscript`
+### AI Features
+- **Shared AI utility** (`api-server/src/lib/ai.ts`): `callAi()` with provider abstraction (DeepSeek/OpenAI), `parseJsonResponse`/`parseJsonArrayResponse`, error classes
+- **Frontend AI utility** (`lennox-admin/src/lib/ai-api.ts`): Client-side fetch helpers for all 6 AI endpoints
+- **Landing Page Generation**: .docx manuscripts parsed with `mammoth`, AI generates title/description/hook/CTA/SEO. Endpoint: `POST /api/books/:id/upload-manuscript`
+- **AI Email Generation** (`POST /api/ai/generate-email`): Generates full email templates from book context (subject, HTML body, text body) by type and language
+- **Auto-Translation** (`POST /api/ai/translate`): Translates landing pages and email templates between supported languages (es/en/fr/de/pt/it)
+- **KDP Descriptions** (`POST /api/ai/generate-kdp`): Generates Amazon KDP content (description, back cover, tagline, keywords, categories, comparable authors)
+- **Nurturing Sequences** (`POST /api/ai/generate-sequence`): Generates 2-10 email nurturing sequences with day scheduling and template types
+- **A/B Subject Lines** (`POST /api/ai/generate-subjects`): Generates variant subject lines for A/B testing from existing email templates
+- **Series Summaries** (`POST /api/ai/generate-series-summary`): Generates series description, tagline, reading order, and audience hook from individual book data
+- All AI routes have strict input validation (type checking, enum validation, bounds checking)
 
 ### Sales Funnel Stages
 1. Lead Magnet (free precuela for email capture)

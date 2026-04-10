@@ -61,7 +61,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain } from "lucide-react";
+import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check } from "lucide-react";
+import { aiGenerateKdp } from "@/lib/ai-api";
 import {
   Table,
   TableBody,
@@ -117,6 +118,9 @@ export default function Books() {
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
   const [uploadingCover, setUploadingCover] = useState<number | null>(null);
   const [uploadingManuscript, setUploadingManuscript] = useState<number | null>(null);
+  const [kdpLoading, setKdpLoading] = useState<number | null>(null);
+  const [kdpResult, setKdpResult] = useState<any>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   
   const [filterSeries, setFilterSeries] = useState<number | "all">("all");
   const [filterStatus, setFilterStatus] = useState<string | "all">("all");
@@ -289,6 +293,25 @@ export default function Books() {
     } finally {
       setUploadingManuscript(null);
     }
+  };
+
+  const handleKdpGenerate = async (bookId: number) => {
+    setKdpLoading(bookId);
+    try {
+      const result = await aiGenerateKdp(bookId);
+      setKdpResult(result);
+      toast({ title: "Contenido KDP generado con IA" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setKdpLoading(null);
+    }
+  };
+
+  const handleCopyKdp = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const getStatusBadge = (status: string) => {
@@ -694,6 +717,9 @@ export default function Books() {
                             disabled={uploadingManuscript === book.id}
                           />
                         </label>
+                        <Button variant="ghost" size="icon" onClick={() => handleKdpGenerate(book.id)} title="Generar KDP" disabled={kdpLoading === book.id} className="text-muted-foreground hover:text-primary">
+                          {kdpLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -734,6 +760,59 @@ export default function Books() {
           <p className="text-muted-foreground">No hay libros que coincidan con los filtros.</p>
         </div>
       )}
+
+      <Dialog open={!!kdpResult} onOpenChange={() => { setKdpResult(null); setCopiedField(null); }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" /> Contenido KDP (IA)</DialogTitle>
+          </DialogHeader>
+          {kdpResult && (
+            <div className="space-y-4">
+              {[
+                { label: "Descripción Amazon", key: "amazonDescription", value: kdpResult.amazonDescription },
+                { label: "Contraportada", key: "backCover", value: kdpResult.backCover },
+                { label: "Tagline", key: "tagline", value: kdpResult.tagline },
+                { label: "Autores comparables", key: "comparableAuthors", value: kdpResult.comparableAuthors },
+              ].map((item) => item.value && (
+                <div key={item.key} className="p-3 rounded-lg bg-muted/30 border">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">{item.label}</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleCopyKdp(typeof item.value === 'string' ? item.value : JSON.stringify(item.value), item.key)}>
+                      {copiedField === item.key ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{item.value}</p>
+                </div>
+              ))}
+              {kdpResult.keywords && (
+                <div className="p-3 rounded-lg bg-muted/30 border">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">Keywords</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleCopyKdp(kdpResult.keywords.join(", "), "keywords")}>
+                      {copiedField === "keywords" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {kdpResult.keywords.map((kw: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-xs">{kw}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {kdpResult.categories && (
+                <div className="p-3 rounded-lg bg-muted/30 border">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Categorías BISAC</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {kdpResult.categories.map((cat: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{cat}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

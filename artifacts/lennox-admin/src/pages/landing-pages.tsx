@@ -61,8 +61,13 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText, Eye, X } from "lucide-react";
+import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText, Eye, X, Languages, Loader2 } from "lucide-react";
 import type { LandingPage } from "@workspace/api-client-react";
+import { aiTranslate } from "@/lib/ai-api";
+
+const languageLabels: Record<string, string> = {
+  es: "Español", en: "English", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano",
+};
 
 const landingPageSchema = z.object({
   entityType: z.enum(["author", "series", "book"]),
@@ -88,6 +93,7 @@ export default function LandingPages() {
   const [filterEntityType, setFilterEntityType] = useState<string>("all");
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
   const [previewPage, setPreviewPage] = useState<LandingPage | null>(null);
+  const [translating, setTranslating] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -203,6 +209,40 @@ export default function LandingPages() {
         toast({ title: "Error al eliminar", variant: "destructive" });
       }
     });
+  };
+
+  const handleTranslateLp = async (page: LandingPage, toLang: string) => {
+    setTranslating(true);
+    try {
+      const translated = await aiTranslate(
+        { title: page.title, description: page.description, metaTitle: page.metaTitle, metaDescription: page.metaDescription, captureHeading: page.captureHeading, captureSubheading: page.captureSubheading, captureButtonText: page.captureButtonText },
+        page.language,
+        toLang,
+        "landing_page"
+      );
+      form.reset({
+        entityType: page.entityType as LandingPageFormValues["entityType"],
+        entityId: page.entityId,
+        language: toLang,
+        url: "",
+        title: translated.title || page.title || "",
+        description: translated.description || page.description || "",
+        metaTitle: translated.metaTitle || page.metaTitle || "",
+        metaDescription: translated.metaDescription || page.metaDescription || "",
+        captureHeading: translated.captureHeading || page.captureHeading || "",
+        captureSubheading: translated.captureSubheading || page.captureSubheading || "",
+        captureButtonText: translated.captureButtonText || page.captureButtonText || "",
+        mailingListId: null,
+        isPublished: false,
+      });
+      setEditingId(null);
+      setIsCreateOpen(true);
+      toast({ title: `Traducido a ${languageLabels[toLang] || toLang}` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const entityTypeLabels: Record<string, string> = {
@@ -529,6 +569,16 @@ export default function LandingPages() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <Select onValueChange={(lang) => handleTranslateLp(page, lang)}>
+                      <SelectTrigger className="w-8 h-8 p-0 border-0 bg-transparent justify-center" title="Traducir">
+                        <Languages className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(languageLabels).filter(([k]) => k !== page.language).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button variant="ghost" size="icon" onClick={() => setPreviewPage(page)} title="Vista previa">
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -598,6 +648,15 @@ export default function LandingPages() {
             <div className="overflow-y-auto max-h-[90vh]">
               <LandingPagePreview page={previewPage} />
             </div>
+          </div>
+        </div>
+      )}
+
+      {translating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card p-6 rounded-lg shadow-xl flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span>Traduciendo landing page con IA...</span>
           </div>
         </div>
       )}

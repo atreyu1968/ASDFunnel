@@ -58,7 +58,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Library, GitMerge, Filter } from "lucide-react";
+import { Plus, Edit2, Trash2, Library, GitMerge, Filter, Brain, Loader2, Copy, Check } from "lucide-react";
+import { aiGenerateSeriesSummary } from "@/lib/ai-api";
 
 const seriesSchema = z.object({
   name: z.string().min(1, "El nombre de la serie es requerido"),
@@ -87,6 +88,9 @@ export default function Series() {
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(null);
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
   const [filterAuthor, setFilterAuthor] = useState<string>("all");
+  const [aiSummary, setAiSummary] = useState<any>(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState<number | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -178,6 +182,35 @@ export default function Series() {
       onError: () => {
         toast({ title: "Error al eliminar", variant: "destructive" });
       }
+    });
+  };
+
+  const handleAiSummary = async (seriesId: number) => {
+    setAiSummaryLoading(seriesId);
+    try {
+      const result = await aiGenerateSeriesSummary(seriesId);
+      setAiSummary({ seriesId, ...result });
+      toast({ title: "Resumen de serie generado con IA" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setAiSummaryLoading(null);
+    }
+  };
+
+  const handleCopyField = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleApplySummary = async (seriesId: number, description: string) => {
+    updateSeries.mutate({ id: seriesId, data: { description } as any }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListSeriesQueryKey() });
+        toast({ title: "Descripción de serie actualizada" });
+        setAiSummary(null);
+      },
     });
   };
 
@@ -434,6 +467,9 @@ export default function Series() {
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusBadge(series.status)}
+                    <Button variant="ghost" size="icon" onClick={() => handleAiSummary(series.id)} title="Generar resumen IA" disabled={aiSummaryLoading === series.id}>
+                      {aiSummaryLoading === series.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(series)}>
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -487,6 +523,37 @@ export default function Series() {
           <p className="text-muted-foreground">No hay series registradas.</p>
         </div>
       )}
+
+      <Dialog open={!!aiSummary} onOpenChange={() => setAiSummary(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> Resumen de Serie (IA)</DialogTitle>
+          </DialogHeader>
+          {aiSummary && (
+            <div className="space-y-4">
+              {[
+                { label: "Descripción", key: "description", value: aiSummary.description },
+                { label: "Tagline", key: "tagline", value: aiSummary.tagline },
+                { label: "Orden de lectura", key: "readingOrder", value: aiSummary.readingOrder },
+                { label: "Gancho para audiencia", key: "audienceHook", value: aiSummary.audienceHook },
+              ].map((item) => item.value && (
+                <div key={item.key} className="p-3 rounded-lg bg-muted/30 border">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">{item.label}</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleCopyField(item.value, item.key)}>
+                      {copiedField === item.key ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <p className="text-sm">{item.value}</p>
+                </div>
+              ))}
+              <Button className="w-full" onClick={() => handleApplySummary(aiSummary.seriesId, aiSummary.description)}>
+                Aplicar descripción a la serie
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
