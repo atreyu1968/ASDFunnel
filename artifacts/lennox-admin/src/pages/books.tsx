@@ -86,7 +86,7 @@ const bookSchema = z.object({
   status: z.enum(["draft", "production", "ready", "scheduled", "published"]),
   publicationDate: z.string().optional().nullable(),
   scheduledDate: z.string().optional().nullable(),
-  distributionChannel: z.enum(["kdp", "email_exclusive", "wide"]).optional().nullable(),
+  distributionChannel: z.enum(["wide", "email_exclusive", "kdp"]).optional().nullable(),
   asin: z.string().optional().nullable(),
   isbn: z.string().optional().nullable(),
   crossoverToSeriesId: z.coerce.number().optional().nullable(),
@@ -176,7 +176,7 @@ export default function Books() {
       status: "draft",
       publicationDate: "",
       scheduledDate: "",
-      distributionChannel: "kdp",
+      distributionChannel: "wide",
       asin: "",
       isbn: "",
       crossoverToSeriesId: null,
@@ -228,7 +228,7 @@ export default function Books() {
       status: book.status,
       publicationDate: book.publicationDate ? book.publicationDate.split('T')[0] : "",
       scheduledDate: book.scheduledDate ? book.scheduledDate.split('T')[0] : "",
-      distributionChannel: book.distributionChannel || "kdp",
+      distributionChannel: book.distributionChannel || "wide",
       asin: book.asin || "",
       isbn: book.isbn || "",
       crossoverToSeriesId: book.crossoverToSeriesId || null,
@@ -300,7 +300,7 @@ export default function Books() {
     try {
       const result = await aiGenerateKdp(bookId);
       setKdpResult(result);
-      toast({ title: "Contenido KDP generado con IA" });
+      toast({ title: "Contenido editorial generado con IA" });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -360,7 +360,7 @@ export default function Books() {
               status: "draft",
               publicationDate: "",
               scheduledDate: "",
-              distributionChannel: "kdp",
+              distributionChannel: "wide",
               asin: "",
               isbn: "",
               crossoverToSeriesId: null,
@@ -717,7 +717,7 @@ export default function Books() {
                             disabled={uploadingManuscript === book.id}
                           />
                         </label>
-                        <Button variant="ghost" size="icon" onClick={() => handleKdpGenerate(book.id)} title="Generar KDP" disabled={kdpLoading === book.id} className="text-muted-foreground hover:text-primary">
+                        <Button variant="ghost" size="icon" onClick={() => handleKdpGenerate(book.id)} title="Generar ficha editorial (D2D)" disabled={kdpLoading === book.id} className="text-muted-foreground hover:text-primary">
                           {kdpLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
@@ -764,12 +764,12 @@ export default function Books() {
       <Dialog open={!!kdpResult} onOpenChange={() => { setKdpResult(null); setCopiedField(null); }}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" /> Contenido KDP (IA)</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" /> Ficha Editorial (IA)</DialogTitle>
           </DialogHeader>
           {kdpResult && (
             <div className="space-y-4">
               {[
-                { label: "Descripción Amazon", key: "amazonDescription", value: kdpResult.amazonDescription },
+                { label: "Descripción Tiendas", key: "amazonDescription", value: kdpResult.amazonDescription },
                 { label: "Contraportada", key: "backCover", value: kdpResult.backCover },
                 { label: "Tagline", key: "tagline", value: kdpResult.tagline },
                 { label: "Autores comparables", key: "comparableAuthors", value: kdpResult.comparableAuthors },

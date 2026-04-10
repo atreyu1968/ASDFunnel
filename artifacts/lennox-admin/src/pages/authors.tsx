@@ -233,7 +233,7 @@ export default function Authors() {
                     <FormItem>
                       <FormLabel>Biografía Pública</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Biografía para Amazon/Website" {...field} value={field.value || ""} />
+                        <Textarea placeholder="Biografía para tiendas y website" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -184,7 +184,7 @@ router.post("/ai/generate-kdp", async (req, res): Promise<void> => {
     const lang = book.books.language || "es";
     const langName = LANG_NAMES[lang] || lang;
 
-    const prompt = `Eres un experto en autopublicación en Amazon KDP y marketing de thrillers psicológicos.
+    const prompt = `Eres un experto en autopublicación y marketing de thrillers psicológicos. El libro se distribuye en múltiples plataformas (Amazon, Apple Books, Kobo, Barnes & Noble, Google Play) vía Draft2Digital (D2D).
 
 Libro: "${book.books.title}"
 Subtítulo: "${book.books.subtitle || ""}"
@@ -195,11 +195,11 @@ Idioma: ${langName}
 
 Genera en ${langName} un JSON con:
 {
-  "amazonDescription": "Descripción completa para Amazon KDP (800-2000 caracteres). Usa HTML básico permitido por Amazon (<b>, <i>, <br>, <h2>). Incluye gancho inicial, sinopsis sin spoilers, reseñas ficticias cortas, y CTA final.",
+  "amazonDescription": "Descripción completa para tiendas online (800-2000 caracteres). Compatible con Amazon, Apple Books, Kobo, etc. Usa formato simple (<b>, <i>, <br>). Incluye gancho inicial, sinopsis sin spoilers, reseñas ficticias cortas, y CTA final.",
   "backCover": "Texto de contraportada (300-500 caracteres). Sinopsis breve que enganche.",
   "tagline": "Tagline de una línea para marketing (máx 100 caracteres)",
-  "keywords": ["7 keywords/frases para Amazon KDP, relevantes para búsquedas"],
-  "categories": ["3 categorías BISAC sugeridas para KDP"],
+  "keywords": ["7 keywords/frases relevantes para búsquedas en tiendas de ebooks"],
+  "categories": ["3 categorías BISAC sugeridas"],
   "comparableAuthors": "Perfecto para fans de [2-3 autores comparables del género]"
 }
 

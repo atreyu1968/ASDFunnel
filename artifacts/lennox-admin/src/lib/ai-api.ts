@@ -29,7 +29,7 @@ export async function aiGenerateKdp(bookId: number) {
     body: JSON.stringify({ bookId }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Error al generar KDP");
+  if (!res.ok) throw new Error(data.error || "Error al generar ficha editorial");
   return data;
 }
 

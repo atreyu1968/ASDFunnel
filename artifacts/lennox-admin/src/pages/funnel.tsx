@@ -152,7 +152,7 @@ export default function Funnel() {
                   </div>
                   <CardDescription>
                     {stage.role === "lead_magnet" && "Captación de emails"}
-                    {stage.role === "traffic_entry" && "Entrada fría (KU/Anuncios)"}
+                    {stage.role === "traffic_entry" && "Entrada fría (D2D/Anuncios)"}
                     {stage.role === "core_offer" && "Monetización principal"}
                     {stage.role === "crossover_bridge" && "Transferencia de audiencia"}
                   </CardDescription>
@@ -211,7 +211,7 @@ export default function Funnel() {
             <strong className="text-primary">Lead Magnet:</strong> Libros distribuidos gratuitamente a cambio del correo electrónico del lector. Nunca se monetizan directamente.
           </p>
           <p>
-            <strong className="text-primary">Entrada de Tráfico:</strong> Libro 1 de las series principales. Optimizados para conversión, a menudo a precio reducido o en Kindle Unlimited.
+            <strong className="text-primary">Entrada de Tráfico:</strong> Libro 1 de las series principales. Optimizados para conversión, a menudo a precio reducido. Distribución amplia vía D2D (Amazon, Apple Books, Kobo, B&N, Google Play).
           </p>
           <p>
             <strong className="text-primary">Oferta Principal:</strong> Libros 2+ de la serie. Precio completo. Aquí es donde ocurre el ROI (Retorno de Inversión) de las campañas.
