@@ -118,6 +118,7 @@ export interface Book {
   distributionChannel?: BookDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  books2readUrl?: string | null;
   coverImageUrl?: string | null;
   manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
@@ -220,6 +221,7 @@ export interface CreateBookBody {
   distributionChannel?: CreateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  books2readUrl?: string | null;
   coverImageUrl?: string | null;
   manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;
@@ -282,6 +284,7 @@ export interface UpdateBookBody {
   distributionChannel?: UpdateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  books2readUrl?: string | null;
   coverImageUrl?: string | null;
   manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;

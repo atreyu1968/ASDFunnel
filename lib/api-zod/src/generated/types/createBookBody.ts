@@ -28,6 +28,7 @@ export interface CreateBookBody {
   distributionChannel?: CreateBookBodyDistributionChannel;
   asin?: string | null;
   isbn?: string | null;
+  books2readUrl?: string | null;
   coverImageUrl?: string | null;
   manuscriptPath?: string | null;
   crossoverToSeriesId?: number | null;

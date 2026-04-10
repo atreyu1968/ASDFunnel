@@ -29,7 +29,7 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 ### Database Schema (PostgreSQL)
 - **authors**: Pen names, bios, brand descriptions, genre focus
 - **series**: Book series linked to authors, with status tracking
-- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling, cover image URLs (GCS), manuscript paths
+- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling, cover image URLs (GCS), manuscript paths, Books2Read universal link (`books2read_url`)
 - **mailing_lists**: Email lists separated by author AND language, with lead magnet book links
 - **subscribers**: Email subscribers with source tracking (lead_magnet, landing_page, manual, import), status management
 - **activity**: Audit log of book-related actions
@@ -64,7 +64,7 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **Landing Page Generation**: .docx manuscripts parsed with `mammoth`, AI generates title/description/hook/CTA/SEO. Endpoint: `POST /api/books/:id/upload-manuscript`
 - **AI Email Generation** (`POST /api/ai/generate-email`): Generates full email templates from book context (subject, HTML body, text body) by type and language
 - **Auto-Translation** (`POST /api/ai/translate`): Translates landing pages and email templates between supported languages (es/en/fr/de/pt/it)
-- **KDP Descriptions** (`POST /api/ai/generate-kdp`): Generates Amazon KDP content (description, back cover, tagline, keywords, categories, comparable authors)
+- **D2D Editorial Content** (`POST /api/ai/generate-kdp`): Generates store descriptions, back cover, tagline, keywords, BISAC categories, comparable authors for wide distribution via Draft2Digital
 - **Nurturing Sequences** (`POST /api/ai/generate-sequence`): Generates 2-10 email nurturing sequences with day scheduling and template types
 - **A/B Subject Lines** (`POST /api/ai/generate-subjects`): Generates variant subject lines for A/B testing from existing email templates
 - **Series Summaries** (`POST /api/ai/generate-series-summary`): Generates series description, tagline, reading order, and audience hook from individual book data
@@ -72,9 +72,14 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 
 ### Sales Funnel Stages
 1. Lead Magnet (free precuela for email capture)
-2. Traffic Entry (perma-free Book 1 on KDP)
+2. Traffic Entry (perma-free Book 1 via D2D wide distribution)
 3. Core Offer (paid books at full price)
 4. Crossover Bridge (series connecting different pen names)
+
+### Distribution Model
+- **Wide via Draft2Digital (D2D)**: Amazon, Apple Books, Kobo, Barnes & Noble, Google Play
+- **Books2Read**: Universal book links (https://books2read.com/) stored per book for cross-store discovery
+- NOT KDP Select / Kindle Unlimited exclusive
 
 ## Key Commands
 

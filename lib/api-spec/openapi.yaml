@@ -1531,6 +1531,9 @@ components:
         isbn:
           type: string
           nullable: true
+        books2readUrl:
+          type: string
+          nullable: true
         coverImageUrl:
           type: string
           nullable: true
@@ -1602,6 +1605,9 @@ components:
         isbn:
           type: string
           nullable: true
+        books2readUrl:
+          type: string
+          nullable: true
         coverImageUrl:
           type: string
           nullable: true
@@ -1662,6 +1668,9 @@ components:
           type: string
           nullable: true
         isbn:
+          type: string
+          nullable: true
+        books2readUrl:
           type: string
           nullable: true
         coverImageUrl:

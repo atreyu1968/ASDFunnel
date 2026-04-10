@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check } from "lucide-react";
+import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check, ExternalLink } from "lucide-react";
 import { aiGenerateKdp } from "@/lib/ai-api";
 import {
   Table,
@@ -89,6 +89,7 @@ const bookSchema = z.object({
   distributionChannel: z.enum(["wide", "email_exclusive", "kdp"]).optional().nullable(),
   asin: z.string().optional().nullable(),
   isbn: z.string().optional().nullable(),
+  books2readUrl: z.string().url("URL inválida").optional().nullable().or(z.literal("")),
   crossoverToSeriesId: z.coerce.number().optional().nullable(),
 });
 
@@ -179,6 +180,7 @@ export default function Books() {
       distributionChannel: "wide",
       asin: "",
       isbn: "",
+      books2readUrl: "",
       crossoverToSeriesId: null,
     },
   });
@@ -231,6 +233,7 @@ export default function Books() {
       distributionChannel: book.distributionChannel || "wide",
       asin: book.asin || "",
       isbn: book.isbn || "",
+      books2readUrl: book.books2readUrl || "",
       crossoverToSeriesId: book.crossoverToSeriesId || null,
     });
     setIsCreateOpen(true);
@@ -363,6 +366,7 @@ export default function Books() {
               distributionChannel: "wide",
               asin: "",
               isbn: "",
+              books2readUrl: "",
               crossoverToSeriesId: null,
             });
           }
@@ -532,6 +536,20 @@ export default function Books() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="books2readUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Enlace Books2Read (Universal Book Link)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://books2read.com/u/..." {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={createBook.isPending || updateBook.isPending}>
@@ -720,6 +738,13 @@ export default function Books() {
                         <Button variant="ghost" size="icon" onClick={() => handleKdpGenerate(book.id)} title="Generar ficha editorial (D2D)" disabled={kdpLoading === book.id} className="text-muted-foreground hover:text-primary">
                           {kdpLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
                         </Button>
+                        {book.books2readUrl && (
+                          <a href={book.books2readUrl} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="icon" title="Ver en Books2Read" className="text-muted-foreground hover:text-primary">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
