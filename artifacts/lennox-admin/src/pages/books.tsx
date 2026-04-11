@@ -61,8 +61,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check, ExternalLink } from "lucide-react";
-import { aiGenerateKdp } from "@/lib/ai-api";
+import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check, ExternalLink, SpellCheck } from "lucide-react";
+import { aiGenerateKdp, aiProofread } from "@/lib/ai-api";
+import { DialogDescription } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -122,6 +123,18 @@ export default function Books() {
   const [kdpLoading, setKdpLoading] = useState<number | null>(null);
   const [kdpResult, setKdpResult] = useState<any>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [proofreadOpen, setProofreadOpen] = useState(false);
+  const [proofreadBookId, setProofreadBookId] = useState<number | null>(null);
+  const [proofreadText, setProofreadText] = useState("");
+  const [proofreadLoading, setProofreadLoading] = useState(false);
+  const [proofreadResult, setProofreadResult] = useState<{
+    correctedText: string;
+    changes: string[];
+    blocksProcessed: number;
+    originalLength: number;
+    correctedLength: number;
+  } | null>(null);
+  const [proofreadMode, setProofreadMode] = useState<"manuscript" | "text">("manuscript");
   
   const [filterSeries, setFilterSeries] = useState<number | "all">("all");
   const [filterStatus, setFilterStatus] = useState<string | "all">("all");
@@ -315,6 +328,38 @@ export default function Books() {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleProofreadOpen = (bookId: number) => {
+    setProofreadBookId(bookId);
+    setProofreadText("");
+    setProofreadResult(null);
+    setProofreadMode("manuscript");
+    setProofreadOpen(true);
+  };
+
+  const handleProofreadSubmit = async () => {
+    setProofreadLoading(true);
+    try {
+      const params: { bookId?: number; text?: string } = {};
+      if (proofreadMode === "manuscript" && proofreadBookId) {
+        params.bookId = proofreadBookId;
+      } else if (proofreadMode === "text" && proofreadText.trim()) {
+        params.text = proofreadText;
+        if (proofreadBookId) params.bookId = proofreadBookId;
+      } else {
+        toast({ title: "Error", description: "Selecciona un manuscrito o pega el texto a corregir", variant: "destructive" });
+        setProofreadLoading(false);
+        return;
+      }
+      const result = await aiProofread(params);
+      setProofreadResult(result);
+      toast({ title: `Corrección completada (${result.blocksProcessed} bloques procesados)` });
+    } catch (e: any) {
+      toast({ title: "Error al corregir", description: e.message, variant: "destructive" });
+    } finally {
+      setProofreadLoading(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -738,6 +783,9 @@ export default function Books() {
                         <Button variant="ghost" size="icon" onClick={() => handleKdpGenerate(book.id)} title="Generar ficha editorial (D2D)" disabled={kdpLoading === book.id} className="text-muted-foreground hover:text-primary">
                           {kdpLoading === book.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
                         </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleProofreadOpen(book.id)} title="Corrección ortotipográfica (IA)" className="text-muted-foreground hover:text-primary">
+                          <SpellCheck className="h-4 w-4" />
+                        </Button>
                         {book.books2readUrl && (
                           <a href={book.books2readUrl} target="_blank" rel="noopener noreferrer">
                             <Button variant="ghost" size="icon" title="Ver en Books2Read" className="text-muted-foreground hover:text-primary">
@@ -785,6 +833,140 @@ export default function Books() {
           <p className="text-muted-foreground">No hay libros que coincidan con los filtros.</p>
         </div>
       )}
+
+      <Dialog open={proofreadOpen} onOpenChange={(open) => {
+        setProofreadOpen(open);
+        if (!open) { setProofreadResult(null); setProofreadText(""); }
+      }}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <SpellCheck className="h-5 w-5 text-primary" /> Corrector Ortotipográfico Senior
+            </DialogTitle>
+            <DialogDescription>
+              Corrección profesional con detección de glitches de IA, errores ortotipográficos y preservación del estilo narrativo.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!proofreadResult ? (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={proofreadMode === "manuscript" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setProofreadMode("manuscript")}
+                >
+                  <FileText className="h-4 w-4 mr-1" /> Manuscrito subido
+                </Button>
+                <Button
+                  variant={proofreadMode === "text" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setProofreadMode("text")}
+                >
+                  <Edit2 className="h-4 w-4 mr-1" /> Pegar texto
+                </Button>
+              </div>
+
+              {proofreadMode === "manuscript" ? (
+                <div className="p-4 rounded-lg border bg-muted/30 space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Se usará el manuscrito (.docx) subido para este libro. El texto se extraerá automáticamente y se procesará bloque a bloque.
+                  </p>
+                  {proofreadBookId && books?.find(b => b.id === proofreadBookId) && (
+                    <div className="text-sm">
+                      <span className="font-medium">Libro: </span>
+                      {books.find(b => b.id === proofreadBookId)?.title}
+                      {!books.find(b => b.id === proofreadBookId)?.manuscriptPath && (
+                        <p className="text-amber-500 mt-1">Este libro no tiene manuscrito subido. Sube un .docx primero o usa la opción "Pegar texto".</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Textarea
+                  placeholder="Pega aquí el texto a corregir (capítulo, fragmento, etc.)..."
+                  value={proofreadText}
+                  onChange={(e) => setProofreadText(e.target.value)}
+                  className="min-h-[200px] font-mono text-xs"
+                />
+              )}
+
+              <div className="p-3 rounded-lg border bg-muted/20 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">El corrector detectará:</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Párrafos o frases clonadas (glitches de IA)</li>
+                  <li>Diálogos rotos o solapados</li>
+                  <li>Bucles de acción repetidos</li>
+                  <li>Errores de concordancia, tiempos verbales, acentuación</li>
+                  <li>Formato incorrecto de diálogos literarios</li>
+                </ul>
+                <p className="mt-1 text-amber-500">Regla de oro: preserva el estilo, tono y trama del autor.</p>
+              </div>
+
+              <Button
+                onClick={handleProofreadSubmit}
+                disabled={proofreadLoading || (proofreadMode === "text" && proofreadText.trim().length < 50)}
+                className="w-full"
+              >
+                {proofreadLoading ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Corrigiendo texto (puede tardar)...</>
+                ) : (
+                  <><SpellCheck className="h-4 w-4 mr-2" /> Iniciar corrección</>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex gap-4 text-xs text-muted-foreground">
+                <span>{proofreadResult.blocksProcessed} bloques procesados</span>
+                <span>{proofreadResult.originalLength.toLocaleString()} → {proofreadResult.correctedLength.toLocaleString()} caracteres</span>
+              </div>
+
+              {proofreadResult.changes.length > 0 && (
+                <div className="p-3 rounded-lg border bg-amber-500/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-amber-500 uppercase">Cambios realizados ({proofreadResult.changes.length})</span>
+                  </div>
+                  <ul className="text-xs space-y-1 max-h-[150px] overflow-y-auto">
+                    {proofreadResult.changes.map((change, i) => (
+                      <li key={i} className="text-muted-foreground">• {change}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Texto corregido</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(proofreadResult.correctedText);
+                      setCopiedField("proofread");
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                  >
+                    {copiedField === "proofread" ? <><Check className="h-3 w-3 mr-1 text-green-500" /> Copiado</> : <><Copy className="h-3 w-3 mr-1" /> Copiar todo</>}
+                  </Button>
+                </div>
+                <div className="text-sm whitespace-pre-wrap max-h-[300px] overflow-y-auto font-serif leading-relaxed">
+                  {proofreadResult.correctedText}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setProofreadResult(null); setProofreadText(""); }} className="flex-1">
+                  Nueva corrección
+                </Button>
+                <Button variant="outline" onClick={() => setProofreadOpen(false)} className="flex-1">
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!kdpResult} onOpenChange={() => { setKdpResult(null); setCopiedField(null); }}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">

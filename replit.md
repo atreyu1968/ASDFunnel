@@ -68,6 +68,9 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **Nurturing Sequences** (`POST /api/ai/generate-sequence`): Generates 2-10 email nurturing sequences with day scheduling and template types
 - **A/B Subject Lines** (`POST /api/ai/generate-subjects`): Generates variant subject lines for A/B testing from existing email templates
 - **Series Summaries** (`POST /api/ai/generate-series-summary`): Generates series description, tagline, reading order, and audience hook from individual book data
+- **Spin-off Guide** (`POST /api/series/:id/generate-spinoff-guide`): Generates connection strategy, unique angle, suggested books, cross-promotion ideas for spin-off series
+- **Orthotypographic Proofreader** (`POST /api/ai/proofread`): Senior-level AI proofreading agent that processes text in ~6000-char blocks. Detects AI glitches (cloned paragraphs, broken dialogues, action loops), corrects grammar/spelling per RAE norms, preserves author style/tone. Works with uploaded .docx manuscripts or pasted text. Returns corrected text + change summary.
+- All AI routes include series context (previous books) for character/plot consistency
 - All AI routes have strict input validation (type checking, enum validation, bounds checking)
 
 ### Sales Funnel Stages

@@ -66,6 +66,24 @@ export async function aiGenerateSeriesSummary(seriesId: number) {
   return data;
 }
 
+export async function aiProofread(params: { bookId?: number; text?: string }) {
+  const res = await fetch(`${API_BASE}api/ai/proofread`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al corregir texto");
+  return data as {
+    success: boolean;
+    originalLength: number;
+    correctedLength: number;
+    blocksProcessed: number;
+    correctedText: string;
+    changes: string[];
+  };
+}
+
 export async function aiGenerateSpinoffGuide(seriesId: number) {
   const res = await fetch(`${API_BASE}api/series/${seriesId}/generate-spinoff-guide`, {
     method: "POST",

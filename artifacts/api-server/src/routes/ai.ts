@@ -538,4 +538,154 @@ Responde SOLO con el JSON.`;
   }
 });
 
+router.post("/ai/proofread", async (req, res): Promise<void> => {
+  try {
+    const bookId = req.body.bookId ? Number(req.body.bookId) : null;
+    const rawText = req.body.text as string | undefined;
+
+    if (!bookId && !rawText) {
+      res.status(400).json({ error: "Se requiere bookId (para usar el manuscrito subido) o text (texto directo)" });
+      return;
+    }
+
+    let textToProofread = rawText || "";
+    let authorPenName = "";
+    let genre = "";
+    let seriesName = "";
+    let bookTitle = "";
+    let language = "es";
+
+    if (bookId) {
+      const [book] = await db
+        .select()
+        .from(booksTable)
+        .innerJoin(seriesTable, eq(booksTable.seriesId, seriesTable.id))
+        .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
+        .where(eq(booksTable.id, bookId));
+
+      if (!book) {
+        res.status(404).json({ error: "Libro no encontrado" });
+        return;
+      }
+
+      authorPenName = book.authors.penName;
+      genre = book.series.genre || "Thriller psicológico";
+      seriesName = book.series.name;
+      bookTitle = book.books.title;
+      language = book.books.language || "es";
+
+      if (!rawText && book.books.manuscriptPath) {
+        try {
+          const { ObjectStorageService } = await import("../lib/objectStorage");
+          const mammoth = (await import("mammoth")).default;
+          const storageService = new ObjectStorageService();
+          const objectFile = await storageService.getObjectEntityFile(book.books.manuscriptPath);
+          const [downloadResponse] = await objectFile.download();
+          const docxBuffer = Buffer.from(downloadResponse);
+          const { value: extracted } = await mammoth.extractRawText({ buffer: docxBuffer });
+          textToProofread = extracted;
+        } catch (storageErr: any) {
+          res.status(400).json({ error: "No se pudo leer el manuscrito. Sube un documento .docx o pega el texto directamente." });
+          return;
+        }
+      }
+    }
+
+    if (!textToProofread || textToProofread.trim().length < 50) {
+      res.status(400).json({ error: "El texto es demasiado corto para corregir (mínimo 50 caracteres)" });
+      return;
+    }
+
+    const langName = LANG_NAMES[language] || language;
+    const BLOCK_SIZE = 6000;
+    const blocks: string[] = [];
+    const paragraphs = textToProofread.split(/\n\n+/);
+    let currentBlock = "";
+
+    for (const para of paragraphs) {
+      if (currentBlock.length + para.length + 2 > BLOCK_SIZE && currentBlock.length > 0) {
+        blocks.push(currentBlock.trim());
+        currentBlock = para;
+      } else {
+        currentBlock += (currentBlock ? "\n\n" : "") + para;
+      }
+    }
+    if (currentBlock.trim()) blocks.push(currentBlock.trim());
+
+    if (blocks.length === 0) {
+      res.status(400).json({ error: "No se encontró texto válido para corregir" });
+      return;
+    }
+
+    const contextInfo = bookId
+      ? `Libro: "${bookTitle}" | Autor: "${authorPenName}" | Serie: "${seriesName}" | Género: ${genre} | Idioma: ${langName}`
+      : `Idioma: ${langName}`;
+
+    const correctedBlocks: string[] = [];
+    const changesSummary: string[] = [];
+
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+
+      const prompt = `Eres un Corrector Ortotipográfico y de Estilo Senior con más de 15 años de experiencia en las grandes editoriales de thrillers. Tu ojo clínico es implacable y tu trabajo consiste en dejar los manuscritos listos para imprenta con calidad de grado comercial (10/10).
+
+CONTEXTO: ${contextInfo}
+Bloque ${i + 1} de ${blocks.length}
+
+DIRECTRICES ESTRICTAS DE CORRECCIÓN:
+
+1. ERRADICACIÓN DE "GLITCHES" DE IA (Prioridad Máxima):
+   - Párrafos o frases clonadas que se repiten consecutiva o circularmente
+   - Diálogos rotos o solapados donde las intervenciones se cortan o se mezclan con la narración
+   - Bucles de acción donde personajes realizan la misma acción dos veces por solapamientos de texto
+   - Transiciones abruptas o incoherentes entre párrafos
+
+2. CORRECCIÓN ORTOTIPOGRÁFICA:
+   - Aplica estrictamente las normas de la RAE para ${langName}
+   - Corrige concordancia, tiempos verbales, acentuación y puntuación
+   - Formato correcto de diálogos literarios (raya —, espacios, puntuación de incisos)
+   - Elimina repeticiones léxicas innecesarias
+
+3. PRESERVACIÓN DEL ESTILO (Regla de Oro):
+   - NO alteres la trama ni elimines escenas
+   - NO suavices el tono. Mantén las frases cortas, afiladas y directas
+   - Intervén solo donde haya un error técnico/gramatical o para mejorar fluidez
+   - Eres el pulidor final, no el escritor
+
+Responde con un JSON:
+{
+  "correctedText": "El texto corregido completo, listo para maquetación",
+  "changes": ["Lista breve de los cambios principales realizados (máx 10 items)"]
+}
+
+TEXTO A CORREGIR:
+---
+${block}
+---
+
+Responde SOLO con el JSON.`;
+
+      const content = await callAi(prompt, { maxTokens: 8000 });
+      const result = parseJsonResponse(content);
+      correctedBlocks.push(result.correctedText || block);
+      if (result.changes && Array.isArray(result.changes)) {
+        changesSummary.push(...result.changes.map((c: string) => `[Bloque ${i + 1}] ${c}`));
+      }
+    }
+
+    const fullCorrectedText = correctedBlocks.join("\n\n");
+
+    res.json({
+      success: true,
+      originalLength: textToProofread.length,
+      correctedLength: fullCorrectedText.length,
+      blocksProcessed: blocks.length,
+      correctedText: fullCorrectedText,
+      changes: changesSummary,
+    });
+  } catch (error: any) {
+    handleAiError(error, req, res);
+  }
+});
+
 export default router;
