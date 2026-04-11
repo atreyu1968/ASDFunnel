@@ -628,61 +628,109 @@ router.post("/ai/proofread", async (req, res): Promise<void> => {
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
 
-      const prompt = `Eres un DETECTOR DE DEFECTOS DE FABRICACIÓN en textos generados por IA. NO eres un corrector complaciente. Tu trabajo es encontrar CADA error, sin excusas. Si el texto parece "perfecto", SOSPECHA MÁS. Los textos generados por IA SIEMPRE tienen defectos ocultos.
+      const prompt = `Eres un AUDITOR DE CALIDAD EDITORIAL FORENSE. Tu misión es detectar y corregir TODOS los defectos de un texto, especialmente los generados por IA. Eres implacable, meticuloso y NUNCA das un texto por bueno sin haberlo pasado por CADA una de las 14 fases de control. Un solo error que se te escape es un fallo profesional.
 
 CONTEXTO: ${contextInfo}
 Bloque ${i + 1} de ${blocks.length}
 
-═══════════════════════════════════════
-PROTOCOLO DE DETECCIÓN (ejecuta TODOS en orden):
-═══════════════════════════════════════
+════════════════════════════════════════════════════════
+PROTOCOLO DE AUDITORÍA — 14 FASES (ejecuta TODAS sin excepción)
+════════════════════════════════════════════════════════
 
-FASE 1 — DETECCIÓN DE SOLAPAMIENTOS DE DIÁLOGO (CRÍTICA)
-Busca frases donde un diálogo se INTERRUMPE a mitad y REINICIA desde el principio.
-EJEMPLO REAL DE ERROR:
-  INCORRECTO: "Hay que seguir —Una foto borrosa y unas coordenadas. Eso no es una orden. Hay que seguir las reglas."
-  → La frase "Hay que seguir" aparece al INICIO y al FINAL. El diálogo del personaje se cortó y se repegó.
-  CORRECTO: "—Una foto borrosa y unas coordenadas. Eso no es una orden. Hay que seguir las reglas."
-TÉCNICA: Lee cada diálogo completo. Si una frase corta del inicio reaparece textualmente más adelante en el MISMO parlamento, es un solapamiento.
+━━━ GRUPO A: GLITCHES ESTRUCTURALES DE IA (CRÍTICOS) ━━━
 
-FASE 2 — DETECCIÓN DE CORTES A MITAD DE FRASE (CRÍTICA)
-Busca frases que se CORTAN con un guion largo y luego SALTAN a otro diálogo distinto.
-EJEMPLO REAL DE ERROR:
-  INCORRECTO: "Si ella se entera de que estás —Sloane, esto es una trampa."
-  → El texto CORTA "Si ella se entera de que estás [algo]" y SALTA a "Sloane, esto es una trampa" sin cerrar la primera idea.
-  → Luego más adelante aparece: "Si ella se entera de que estás aquí por tu cuenta…" (la frase COMPLETA).
-TÉCNICA: Si una frase arranca, se interrumpe con raya, y la continuación NO completa esa frase sino que empieza otra idea, es un corte. Busca si esa misma frase aparece COMPLETA en otro punto del texto.
+FASE 1 — SOLAPAMIENTO DE DIÁLOGO
+Un parlamento que empieza con una frase, se interrumpe, y esa MISMA frase reaparece más adelante en el mismo bloque.
+EJEMPLO: "Hay que seguir —Una foto borrosa [...] Hay que seguir las reglas."
+→ "Hay que seguir" está al inicio y al final. La IA pegó dos versiones del mismo diálogo.
+CORRECCIÓN: Eliminar la versión incompleta, dejar solo la completa.
 
-FASE 3 — DETECCIÓN DE BUCLES DE ACCIÓN (CRÍTICA)
-Busca descripciones narrativas donde una acción o detalle se REPITE con las mismas palabras.
-EJEMPLO REAL DE ERROR:
-  INCORRECTO: "Un fragmento óseo, Jaren se frotó la frente [...] Un fragmento óseo, un metal forzado..."
-  → "Un fragmento óseo" se repite DOS VECES en el mismo párrafo. La IA generó la misma descripción dos veces.
-TÉCNICA: Busca sustantivos o frases de 3+ palabras que aparezcan textualmente repetidos en el mismo párrafo o en párrafos consecutivos.
+FASE 2 — CORTE A MITAD DE FRASE
+Una oración empieza, se corta con raya (—) y lo que sigue NO es la continuación lógica sino un diálogo o idea DIFERENTE.
+EJEMPLO: "Si ella se entera de que estás —Sloane, esto es una trampa."
+→ "Si ella se entera de que estás [¿qué?]" nunca se completa. Después del guion empieza otra idea.
+CORRECCIÓN: Buscar si la frase completa existe en otro punto. Si no, reconstruirla de forma coherente.
 
-FASE 4 — DETECCIÓN DE PÁRRAFOS CLONADOS
-Busca párrafos enteros o bloques de 2+ oraciones que se repitan (exactos o casi exactos) en distintas partes del texto.
+FASE 3 — BUCLE DE ACCIÓN / DESCRIPCIÓN
+Una frase descriptiva o de acción se repite textualmente (o casi) en el mismo párrafo o en párrafos contiguos.
+EJEMPLO: "Un fragmento óseo, Jaren se frotó la frente [...] Un fragmento óseo, un metal forzado..."
+→ "Un fragmento óseo" aparece DOS veces porque la IA regeneró el mismo pasaje.
+CORRECCIÓN: Fusionar ambas apariciones en una sola, conservando el contenido más completo.
 
-FASE 5 — CORRECCIÓN ORTOTIPOGRÁFICA
-SOLO DESPUÉS de completar las fases 1-4:
-- Concordancia, tiempos verbales, acentuación (normas RAE para ${langName})
-- Formato correcto de diálogos: raya (—), espacios, puntuación de incisos
-- Repeticiones léxicas no intencionales
+FASE 4 — PÁRRAFOS CLONADOS
+Dos o más párrafos (2+ oraciones) con contenido idéntico o casi idéntico en distintas partes del texto.
+CORRECCIÓN: Eliminar los duplicados, conservando la versión más pulida.
 
-REGLA DE ORO: NO alteres trama, NO suavices tono, NO reescribas. Solo CORRIGE errores técnicos.
+FASE 5 — CAMBIO BRUSCO DE PERSPECTIVA / VOZ NARRATIVA
+El texto pasa sin transición de 3ª persona a 1ª, o de narrador omnisciente a limitado, o cambia de personaje POV sin marca.
+EJEMPLO: "Sloane observó la puerta. Yo sabía que era una trampa."
+CORRECCIÓN: Unificar la voz narrativa manteniendo la dominante.
 
-═══════════════════════════════════════
+FASE 6 — RUPTURA DE CONTINUIDAD TEMPORAL
+Acciones que ocurren en orden ilógico: un personaje reacciona ANTES de que ocurra el estímulo, o una escena nocturna pasa a ser diurna sin transición.
+EJEMPLO: "Sloane respondió al disparo. Entonces sonó el disparo."
+CORRECCIÓN: Reordenar las acciones en secuencia lógica.
+
+FASE 7 — PERSONAJE FANTASMA / TELETRANSPORTADO
+Un personaje que se fue de la escena reaparece hablando o actuando sin haber vuelto. O un personaje presente desaparece sin explicación.
+EJEMPLO: "Jaren salió del despacho. [...] —Es una trampa —dijo Jaren, cruzado de brazos junto a la ventana."
+CORRECCIÓN: Añadir transición mínima o eliminar la contradicción.
+
+━━━ GRUPO B: DEFECTOS DE LENGUAJE DE IA (MEDIOS) ━━━
+
+FASE 8 — MULETILLAS Y FÓRMULAS REPETITIVAS
+Frases que la IA usa obsesivamente: "un escalofrío recorrió su espalda", "el silencio era ensordecedor", "algo se rompió dentro de ella", "no pudo evitar pensar", "una sonrisa que no alcanzaba sus ojos", "la tensión se podía cortar con un cuchillo", "sus nudillos se pusieron blancos", "el corazón le latía con fuerza". Busca CUALQUIER expresión cliché que aparezca más de una vez en el bloque.
+CORRECCIÓN: Sustituir por descripciones más originales que preserven el tono del autor.
+
+FASE 9 — SOBRE-EXPLICACIÓN EMOCIONAL
+El texto MUESTRA una emoción con acción y luego la EXPLICA redundantemente.
+EJEMPLO: "Apretó los puños. Estaba furioso." → "Apretó los puños" ya implica furia.
+CORRECCIÓN: Eliminar la explicación redundante, dejar solo la acción.
+
+FASE 10 — TRANSICIONES ARTIFICIALES
+Frases de conexión forzadas que suenan a resumen o a narrador de documental.
+EJEMPLO: "Lo que no sabía era que...", "Poco podía imaginar que...", "Sin saberlo, acababa de..."
+CORRECCIÓN: Reformular con técnica narrativa (mostrar, no decir).
+
+FASE 11 — DIÁLOGOS INFORMATIVOS ANTINATURALES
+Personajes que se explican cosas que ambos ya saben, solo para informar al lector.
+EJEMPLO: "—Como sabes, llevamos tres años en este caso y tu padre era el fiscal general."
+CORRECCIÓN: Reformular para que el diálogo sea natural (o convertir en narración).
+
+━━━ GRUPO C: CORRECCIÓN TÉCNICA EDITORIAL ━━━
+
+FASE 12 — ORTOTIPOGRAFÍA RAE (${langName})
+- Acentuación, concordancia género/número, tiempos verbales
+- Puntuación correcta (comas, puntos, punto y coma)
+- Uso correcto de mayúsculas
+- Signos de apertura (¿ ¡) siempre presentes
+
+FASE 13 — FORMATO DE DIÁLOGOS LITERARIOS
+- Raya (—) para abrir diálogo, NUNCA guion corto (-) ni comillas
+- Incisos del narrador: —texto —dijo Nombre— continuación.
+- Puntuación correcta dentro y fuera de los incisos
+- Cada intervención en párrafo separado
+
+FASE 14 — COHERENCIA LÉXICA Y REGISTRO
+- Un mismo objeto/lugar/personaje debe llamarse igual en todo el texto
+- Registro lingüístico uniforme (no mezclar coloquial con académico sin justificación)
+- Evitar anglicismos innecesarios salvo que sean parte del estilo del autor
+
+━━━ REGLA DE ORO ━━━
+NO alteres la trama. NO elimines escenas. NO suavices el tono. NO reescribas párrafos enteros que funcionen bien. Eres un bisturí, no una excavadora. Intervén solo donde haya un defecto real.
+
+════════════════════════════════════════════════════════
 FORMATO DE RESPUESTA (JSON estricto):
-═══════════════════════════════════════
+════════════════════════════════════════════════════════
 {
-  "correctedText": "El texto corregido COMPLETO. Cada glitch debe estar ELIMINADO, no solo señalado.",
+  "correctedText": "Texto corregido COMPLETO con TODOS los defectos eliminados.",
   "glitches": [
     {
-      "type": "solapamiento_dialogo | corte_frase | bucle_accion | parrafo_clonado | ortotipografico",
+      "type": "solapamiento_dialogo | corte_frase | bucle_accion | parrafo_clonado | cambio_perspectiva | ruptura_temporal | personaje_fantasma | muletilla_ia | sobre_explicacion | transicion_artificial | dialogo_informativo | ortotipografico | formato_dialogo | coherencia_lexica",
       "severity": "critico | medio | menor",
-      "original": "Cita EXACTA del texto original con el error (máx 100 chars)",
-      "fixed": "Cómo quedó corregido (máx 100 chars)",
-      "description": "Explicación breve del error"
+      "original": "Cita EXACTA del fragmento con error (máx 120 chars)",
+      "fixed": "Cómo quedó corregido (máx 120 chars)",
+      "description": "Explicación concisa del defecto"
     }
   ],
   "stats": {
@@ -693,19 +741,20 @@ FORMATO DE RESPUESTA (JSON estricto):
   }
 }
 
-IMPORTANTE SOBRE qualityScore:
-- 10 = Texto PERFECTO sin un solo error (casi imposible en textos generados por IA)
-- 8-9 = Solo errores menores ortotipográficos
-- 5-7 = Algunos glitches de IA encontrados y corregidos
-- 1-4 = Múltiples glitches graves (solapamientos, cortes, bucles)
-- Si no encuentras NINGÚN glitch en un texto generado por IA, tu puntuación NO puede ser mayor de 8. Los textos de IA SIEMPRE tienen imperfecciones sutiles.
+ESCALA qualityScore:
+- 10 = Impecable (imposible en texto de IA sin corrección previa)
+- 8-9 = Solo errores menores tipográficos
+- 6-7 = Defectos medios (muletillas, sobre-explicaciones)
+- 4-5 = Glitches estructurales corregidos (solapamientos, cortes)
+- 1-3 = Múltiples glitches críticos graves
+- Máximo 7 si no encuentras NINGÚN glitch en texto de IA (es que los estás pasando por alto)
 
-TEXTO A ANALIZAR Y CORREGIR:
+TEXTO A AUDITAR:
 ---
 ${block}
 ---
 
-Responde SOLO con el JSON.`;
+Responde SOLO con el JSON, sin markdown.`;
 
       const content = await callAi(prompt, { maxTokens: 8000 });
       const result = parseJsonResponse(content);

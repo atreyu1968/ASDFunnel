@@ -893,15 +893,24 @@ export default function Books() {
                 />
               )}
 
-              <div className="p-3 rounded-lg border bg-muted/20 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">El corrector detectará:</p>
-                <ul className="list-disc pl-4 space-y-0.5">
-                  <li>Párrafos o frases clonadas (glitches de IA)</li>
-                  <li>Diálogos rotos o solapados</li>
-                  <li>Bucles de acción repetidos</li>
-                  <li>Errores de concordancia, tiempos verbales, acentuación</li>
-                  <li>Formato incorrecto de diálogos literarios</li>
-                </ul>
+              <div className="p-3 rounded-lg border bg-muted/20 text-xs text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">Auditoría de 14 fases — El corrector detectará:</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <span className="text-red-400">● Solapamientos de diálogo</span>
+                  <span className="text-red-400">● Cortes a mitad de frase</span>
+                  <span className="text-red-400">● Bucles de acción/descripción</span>
+                  <span className="text-red-400">● Párrafos clonados</span>
+                  <span className="text-red-400">● Cambios de perspectiva/voz</span>
+                  <span className="text-red-400">● Rupturas de continuidad temporal</span>
+                  <span className="text-red-400">● Personajes fantasma</span>
+                  <span className="text-amber-400">● Muletillas y clichés de IA</span>
+                  <span className="text-amber-400">● Sobre-explicación emocional</span>
+                  <span className="text-amber-400">● Transiciones artificiales</span>
+                  <span className="text-amber-400">● Diálogos informativos</span>
+                  <span className="text-blue-400">● Ortotipografía RAE</span>
+                  <span className="text-blue-400">● Formato de diálogos</span>
+                  <span className="text-blue-400">● Coherencia léxica</span>
+                </div>
                 <p className="mt-1 text-amber-500">Regla de oro: preserva el estilo, tono y trama del autor.</p>
               </div>
 
@@ -937,9 +946,9 @@ export default function Books() {
                   <span className="text-xs font-medium text-red-400 uppercase">Glitches de IA detectados ({proofreadResult.glitches.length})</span>
                   <div className="mt-2 space-y-3 max-h-[200px] overflow-y-auto">
                     {proofreadResult.glitches.map((g, i) => (
-                      <div key={i} className="text-xs border-l-2 border-red-500/50 pl-3 space-y-1">
-                        <div className="flex gap-2 items-center">
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                      <div key={i} className="text-xs border-l-2 pl-3 space-y-1" style={{ borderColor: ["solapamiento_dialogo","corte_frase","bucle_accion","parrafo_clonado","cambio_perspectiva","ruptura_temporal","personaje_fantasma"].includes(g.type) ? "rgb(239 68 68 / 0.5)" : ["muletilla_ia","sobre_explicacion","transicion_artificial","dialogo_informativo"].includes(g.type) ? "rgb(245 158 11 / 0.5)" : "rgb(59 130 246 / 0.5)" }}>
+                        <div className="flex gap-2 items-center flex-wrap">
+                          <Badge className={`text-[10px] px-1.5 py-0 ${["solapamiento_dialogo","corte_frase","bucle_accion","parrafo_clonado","cambio_perspectiva","ruptura_temporal","personaje_fantasma"].includes(g.type) ? "bg-red-500/20 text-red-400 border-red-500/30" : ["muletilla_ia","sobre_explicacion","transicion_artificial","dialogo_informativo"].includes(g.type) ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-blue-500/20 text-blue-400 border-blue-500/30"}`}>
                             {g.type.replace(/_/g, " ")}
                           </Badge>
                           <span className="text-muted-foreground">Bloque {g.block}</span>
