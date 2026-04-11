@@ -623,42 +623,84 @@ router.post("/ai/proofread", async (req, res): Promise<void> => {
 
     const correctedBlocks: string[] = [];
     const changesSummary: string[] = [];
+    const glitchesFound: { block: number; type: string; description: string; original: string; fixed: string }[] = [];
 
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
 
-      const prompt = `Eres un Corrector Ortotipográfico y de Estilo Senior con más de 15 años de experiencia en las grandes editoriales de thrillers. Tu ojo clínico es implacable y tu trabajo consiste en dejar los manuscritos listos para imprenta con calidad de grado comercial (10/10).
+      const prompt = `Eres un DETECTOR DE DEFECTOS DE FABRICACIÓN en textos generados por IA. NO eres un corrector complaciente. Tu trabajo es encontrar CADA error, sin excusas. Si el texto parece "perfecto", SOSPECHA MÁS. Los textos generados por IA SIEMPRE tienen defectos ocultos.
 
 CONTEXTO: ${contextInfo}
 Bloque ${i + 1} de ${blocks.length}
 
-DIRECTRICES ESTRICTAS DE CORRECCIÓN:
+═══════════════════════════════════════
+PROTOCOLO DE DETECCIÓN (ejecuta TODOS en orden):
+═══════════════════════════════════════
 
-1. ERRADICACIÓN DE "GLITCHES" DE IA (Prioridad Máxima):
-   - Párrafos o frases clonadas que se repiten consecutiva o circularmente
-   - Diálogos rotos o solapados donde las intervenciones se cortan o se mezclan con la narración
-   - Bucles de acción donde personajes realizan la misma acción dos veces por solapamientos de texto
-   - Transiciones abruptas o incoherentes entre párrafos
+FASE 1 — DETECCIÓN DE SOLAPAMIENTOS DE DIÁLOGO (CRÍTICA)
+Busca frases donde un diálogo se INTERRUMPE a mitad y REINICIA desde el principio.
+EJEMPLO REAL DE ERROR:
+  INCORRECTO: "Hay que seguir —Una foto borrosa y unas coordenadas. Eso no es una orden. Hay que seguir las reglas."
+  → La frase "Hay que seguir" aparece al INICIO y al FINAL. El diálogo del personaje se cortó y se repegó.
+  CORRECTO: "—Una foto borrosa y unas coordenadas. Eso no es una orden. Hay que seguir las reglas."
+TÉCNICA: Lee cada diálogo completo. Si una frase corta del inicio reaparece textualmente más adelante en el MISMO parlamento, es un solapamiento.
 
-2. CORRECCIÓN ORTOTIPOGRÁFICA:
-   - Aplica estrictamente las normas de la RAE para ${langName}
-   - Corrige concordancia, tiempos verbales, acentuación y puntuación
-   - Formato correcto de diálogos literarios (raya —, espacios, puntuación de incisos)
-   - Elimina repeticiones léxicas innecesarias
+FASE 2 — DETECCIÓN DE CORTES A MITAD DE FRASE (CRÍTICA)
+Busca frases que se CORTAN con un guion largo y luego SALTAN a otro diálogo distinto.
+EJEMPLO REAL DE ERROR:
+  INCORRECTO: "Si ella se entera de que estás —Sloane, esto es una trampa."
+  → El texto CORTA "Si ella se entera de que estás [algo]" y SALTA a "Sloane, esto es una trampa" sin cerrar la primera idea.
+  → Luego más adelante aparece: "Si ella se entera de que estás aquí por tu cuenta…" (la frase COMPLETA).
+TÉCNICA: Si una frase arranca, se interrumpe con raya, y la continuación NO completa esa frase sino que empieza otra idea, es un corte. Busca si esa misma frase aparece COMPLETA en otro punto del texto.
 
-3. PRESERVACIÓN DEL ESTILO (Regla de Oro):
-   - NO alteres la trama ni elimines escenas
-   - NO suavices el tono. Mantén las frases cortas, afiladas y directas
-   - Intervén solo donde haya un error técnico/gramatical o para mejorar fluidez
-   - Eres el pulidor final, no el escritor
+FASE 3 — DETECCIÓN DE BUCLES DE ACCIÓN (CRÍTICA)
+Busca descripciones narrativas donde una acción o detalle se REPITE con las mismas palabras.
+EJEMPLO REAL DE ERROR:
+  INCORRECTO: "Un fragmento óseo, Jaren se frotó la frente [...] Un fragmento óseo, un metal forzado..."
+  → "Un fragmento óseo" se repite DOS VECES en el mismo párrafo. La IA generó la misma descripción dos veces.
+TÉCNICA: Busca sustantivos o frases de 3+ palabras que aparezcan textualmente repetidos en el mismo párrafo o en párrafos consecutivos.
 
-Responde con un JSON:
+FASE 4 — DETECCIÓN DE PÁRRAFOS CLONADOS
+Busca párrafos enteros o bloques de 2+ oraciones que se repitan (exactos o casi exactos) en distintas partes del texto.
+
+FASE 5 — CORRECCIÓN ORTOTIPOGRÁFICA
+SOLO DESPUÉS de completar las fases 1-4:
+- Concordancia, tiempos verbales, acentuación (normas RAE para ${langName})
+- Formato correcto de diálogos: raya (—), espacios, puntuación de incisos
+- Repeticiones léxicas no intencionales
+
+REGLA DE ORO: NO alteres trama, NO suavices tono, NO reescribas. Solo CORRIGE errores técnicos.
+
+═══════════════════════════════════════
+FORMATO DE RESPUESTA (JSON estricto):
+═══════════════════════════════════════
 {
-  "correctedText": "El texto corregido completo, listo para maquetación",
-  "changes": ["Lista breve de los cambios principales realizados (máx 10 items)"]
+  "correctedText": "El texto corregido COMPLETO. Cada glitch debe estar ELIMINADO, no solo señalado.",
+  "glitches": [
+    {
+      "type": "solapamiento_dialogo | corte_frase | bucle_accion | parrafo_clonado | ortotipografico",
+      "severity": "critico | medio | menor",
+      "original": "Cita EXACTA del texto original con el error (máx 100 chars)",
+      "fixed": "Cómo quedó corregido (máx 100 chars)",
+      "description": "Explicación breve del error"
+    }
+  ],
+  "stats": {
+    "glitchesDetected": 0,
+    "criticalErrors": 0,
+    "typographicFixes": 0,
+    "qualityScore": 0
+  }
 }
 
-TEXTO A CORREGIR:
+IMPORTANTE SOBRE qualityScore:
+- 10 = Texto PERFECTO sin un solo error (casi imposible en textos generados por IA)
+- 8-9 = Solo errores menores ortotipográficos
+- 5-7 = Algunos glitches de IA encontrados y corregidos
+- 1-4 = Múltiples glitches graves (solapamientos, cortes, bucles)
+- Si no encuentras NINGÚN glitch en un texto generado por IA, tu puntuación NO puede ser mayor de 8. Los textos de IA SIEMPRE tienen imperfecciones sutiles.
+
+TEXTO A ANALIZAR Y CORREGIR:
 ---
 ${block}
 ---
@@ -668,12 +710,31 @@ Responde SOLO con el JSON.`;
       const content = await callAi(prompt, { maxTokens: 8000 });
       const result = parseJsonResponse(content);
       correctedBlocks.push(result.correctedText || block);
+
+      if (result.glitches && Array.isArray(result.glitches)) {
+        for (const g of result.glitches) {
+          glitchesFound.push({
+            block: i + 1,
+            type: g.type || "desconocido",
+            description: g.description || "",
+            original: g.original || "",
+            fixed: g.fixed || "",
+          });
+          changesSummary.push(`[Bloque ${i + 1}] [${(g.severity || "").toUpperCase()}] ${g.type}: ${g.description}`);
+        }
+      }
+
       if (result.changes && Array.isArray(result.changes)) {
         changesSummary.push(...result.changes.map((c: string) => `[Bloque ${i + 1}] ${c}`));
       }
     }
 
     const fullCorrectedText = correctedBlocks.join("\n\n");
+
+    const totalGlitches = glitchesFound.length;
+    const criticalGlitches = glitchesFound.filter(g =>
+      ["solapamiento_dialogo", "corte_frase", "bucle_accion", "parrafo_clonado"].includes(g.type)
+    ).length;
 
     res.json({
       success: true,
@@ -682,6 +743,12 @@ Responde SOLO con el JSON.`;
       blocksProcessed: blocks.length,
       correctedText: fullCorrectedText,
       changes: changesSummary,
+      glitches: glitchesFound,
+      stats: {
+        totalGlitches,
+        criticalGlitches,
+        typographicFixes: totalGlitches - criticalGlitches,
+      },
     });
   } catch (error: any) {
     handleAiError(error, req, res);

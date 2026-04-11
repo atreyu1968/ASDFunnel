@@ -81,6 +81,8 @@ export async function aiProofread(params: { bookId?: number; text?: string }) {
     blocksProcessed: number;
     correctedText: string;
     changes: string[];
+    glitches?: { block: number; type: string; description: string; original: string; fixed: string }[];
+    stats?: { totalGlitches: number; criticalGlitches: number; typographicFixes: number };
   };
 }
 

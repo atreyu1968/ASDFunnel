@@ -133,6 +133,8 @@ export default function Books() {
     blocksProcessed: number;
     originalLength: number;
     correctedLength: number;
+    glitches?: { block: number; type: string; description: string; original: string; fixed: string }[];
+    stats?: { totalGlitches: number; criticalGlitches: number; typographicFixes: number };
   } | null>(null);
   const [proofreadMode, setProofreadMode] = useState<"manuscript" | "text">("manuscript");
   
@@ -917,15 +919,52 @@ export default function Books() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex gap-4 text-xs text-muted-foreground">
+              <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
                 <span>{proofreadResult.blocksProcessed} bloques procesados</span>
                 <span>{proofreadResult.originalLength.toLocaleString()} → {proofreadResult.correctedLength.toLocaleString()} caracteres</span>
+                {proofreadResult.stats && (
+                  <>
+                    <span className={proofreadResult.stats.criticalGlitches > 0 ? "text-red-400 font-medium" : "text-green-400"}>
+                      {proofreadResult.stats.criticalGlitches} glitches críticos
+                    </span>
+                    <span>{proofreadResult.stats.typographicFixes} correcciones tipográficas</span>
+                  </>
+                )}
               </div>
+
+              {proofreadResult.glitches && proofreadResult.glitches.length > 0 && (
+                <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10">
+                  <span className="text-xs font-medium text-red-400 uppercase">Glitches de IA detectados ({proofreadResult.glitches.length})</span>
+                  <div className="mt-2 space-y-3 max-h-[200px] overflow-y-auto">
+                    {proofreadResult.glitches.map((g, i) => (
+                      <div key={i} className="text-xs border-l-2 border-red-500/50 pl-3 space-y-1">
+                        <div className="flex gap-2 items-center">
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                            {g.type.replace(/_/g, " ")}
+                          </Badge>
+                          <span className="text-muted-foreground">Bloque {g.block}</span>
+                        </div>
+                        <p className="text-muted-foreground">{g.description}</p>
+                        {g.original && (
+                          <div className="bg-red-500/5 p-1.5 rounded text-red-300 line-through">
+                            {g.original}
+                          </div>
+                        )}
+                        {g.fixed && (
+                          <div className="bg-green-500/5 p-1.5 rounded text-green-300">
+                            {g.fixed}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {proofreadResult.changes.length > 0 && (
                 <div className="p-3 rounded-lg border bg-amber-500/10">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-amber-500 uppercase">Cambios realizados ({proofreadResult.changes.length})</span>
+                    <span className="text-xs font-medium text-amber-500 uppercase">Detalle de cambios ({proofreadResult.changes.length})</span>
                   </div>
                   <ul className="text-xs space-y-1 max-h-[150px] overflow-y-auto">
                     {proofreadResult.changes.map((change, i) => (
