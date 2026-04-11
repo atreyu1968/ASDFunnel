@@ -75,13 +75,17 @@ router.post("/ai/generate-email", async (req, res): Promise<void> => {
       unsubscribe: "email de confirmación de baja",
     };
 
+    const seriesContext = await getSeriesContext(book.books.seriesId, bookId);
+
     const prompt = `Eres un experto en email marketing para thrillers psicológicos. Genera un email de tipo "${typeDescriptions[templateType] || templateType}".
 
 Libro: "${book.books.title}"
 Autor: "${book.authors.penName}"
-Serie: "${book.series.name}"
-Descripción: "${book.books.description || "Thriller psicológico"}"
+Serie: "${book.series.name}" (#${book.books.bookNumber})
+Descripción de la serie: "${book.series.description || ""}"
+Descripción del libro: "${book.books.description || "Thriller psicológico"}"
 Idioma: ${langName}
+${seriesContext}
 
 Genera en ${langName} un JSON con:
 {
@@ -161,6 +165,27 @@ Responde SOLO con un JSON con los mismos campos traducidos.`;
   }
 });
 
+async function getSeriesContext(seriesId: number, currentBookId: number): Promise<string> {
+  const otherBooks = await db
+    .select()
+    .from(booksTable)
+    .where(eq(booksTable.seriesId, seriesId))
+    .orderBy(booksTable.bookNumber);
+
+  const siblings = otherBooks.filter(b => b.id !== currentBookId);
+  if (siblings.length === 0) return "";
+
+  const booksInfo = siblings
+    .map(b => `  - Libro #${b.bookNumber} "${b.title}": ${b.description || "Sin descripción"}`)
+    .join("\n");
+
+  return `
+CONTEXTO DE LA SERIE (libros anteriores/existentes):
+${booksInfo}
+
+IMPORTANTE: Mantén la coherencia con los libros existentes de la serie. Los personajes principales, el protagonista, el universo narrativo y el tono deben ser consistentes. Este es el libro #${otherBooks.find(b => b.id === currentBookId)?.bookNumber || "?"} de la serie, NO cambies al protagonista ni inventes personajes que contradigan los libros anteriores. El nuevo libro debe continuar o expandir las tramas existentes.`;
+}
+
 router.post("/ai/generate-kdp", async (req, res): Promise<void> => {
   try {
     const bookId = Number(req.body.bookId);
@@ -183,6 +208,7 @@ router.post("/ai/generate-kdp", async (req, res): Promise<void> => {
 
     const lang = book.books.language || "es";
     const langName = LANG_NAMES[lang] || lang;
+    const seriesContext = await getSeriesContext(book.books.seriesId, bookId);
 
     const prompt = `Eres un experto en autopublicación y marketing de thrillers psicológicos. El libro se distribuye en múltiples plataformas (Amazon, Apple Books, Kobo, Barnes & Noble, Google Play) vía Draft2Digital (D2D).
 
@@ -190,13 +216,15 @@ Libro: "${book.books.title}"
 Subtítulo: "${book.books.subtitle || ""}"
 Autor: "${book.authors.penName}"
 Serie: "${book.series.name}" (#${book.books.bookNumber})
-Descripción existente: "${book.books.description || ""}"
+Descripción de la serie: "${book.series.description || ""}"
+Descripción existente del libro: "${book.books.description || ""}"
 Idioma: ${langName}
+${seriesContext}
 
 Genera en ${langName} un JSON con:
 {
-  "amazonDescription": "Descripción completa para tiendas online (800-2000 caracteres). Compatible con Amazon, Apple Books, Kobo, etc. Usa formato simple (<b>, <i>, <br>). Incluye gancho inicial, sinopsis sin spoilers, reseñas ficticias cortas, y CTA final.",
-  "backCover": "Texto de contraportada (300-500 caracteres). Sinopsis breve que enganche.",
+  "amazonDescription": "Descripción completa para tiendas online (800-2000 caracteres). Compatible con Amazon, Apple Books, Kobo, etc. Usa formato simple (<b>, <i>, <br>). Incluye gancho inicial, sinopsis sin spoilers, reseñas ficticias cortas, y CTA final. DEBE ser coherente con los libros anteriores de la serie.",
+  "backCover": "Texto de contraportada (300-500 caracteres). Sinopsis breve que enganche y sea coherente con la serie.",
   "tagline": "Tagline de una línea para marketing (máx 100 caracteres)",
   "keywords": ["7 keywords/frases relevantes para búsquedas en tiendas de ebooks"],
   "categories": ["3 categorías BISAC sugeridas"],
@@ -246,13 +274,16 @@ router.post("/ai/generate-sequence", async (req, res): Promise<void> => {
 
     const langName = LANG_NAMES[language] || language;
     const count = emailCount;
+    const seriesContext = await getSeriesContext(book.books.seriesId, bookId);
 
     const prompt = `Eres un experto en secuencias de email nurturing para thrillers psicológicos.
 
 Libro: "${book.books.title}"
 Autor: "${book.authors.penName}"
-Serie: "${book.series.name}"
+Serie: "${book.series.name}" (#${book.books.bookNumber})
+Descripción del libro: "${book.books.description || ""}"
 Idioma: ${langName}
+${seriesContext}
 
 Genera una secuencia de ${count} emails de nurturing post-suscripción.
 La secuencia debe:
