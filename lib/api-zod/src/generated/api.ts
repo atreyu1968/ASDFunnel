@@ -119,7 +119,7 @@ export const ListSeriesResponse = zod.array(ListSeriesResponseItem);
 export const CreateSeriesBody = zod.object({
   authorId: zod.number(),
   name: zod.string(),
-  description: zod.string().nullish(),
+  description: zod.string().max(50000).nullish(),
   genre: zod.string().nullish(),
   language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
@@ -201,7 +201,7 @@ export const UpdateSeriesParams = zod.object({
 export const UpdateSeriesBody = zod.object({
   authorId: zod.number(),
   name: zod.string(),
-  description: zod.string().nullish(),
+  description: zod.string().max(50000).nullish(),
   genre: zod.string().nullish(),
   language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
@@ -288,7 +288,7 @@ export const CreateBookBody = zod.object({
   bookNumber: zod.number(),
   title: zod.string(),
   subtitle: zod.string().nullish(),
-  description: zod.string().nullish(),
+  description: zod.string().max(50000).nullish(),
   language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
@@ -363,7 +363,7 @@ export const UpdateBookBody = zod.object({
   bookNumber: zod.number().optional(),
   title: zod.string().optional(),
   subtitle: zod.string().nullish(),
-  description: zod.string().nullish(),
+  description: zod.string().max(50000).nullish(),
   language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod
