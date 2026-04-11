@@ -56,9 +56,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Mail, FileCode, Eye, Brain, Languages, Sparkles, Loader2, Copy, Check } from "lucide-react";
+import { Plus, Edit2, Trash2, Mail, FileCode, Eye, Brain, Languages, Sparkles, Loader2, Copy, Check, SpellCheck } from "lucide-react";
 import type { EmailTemplate } from "@workspace/api-client-react";
 import { aiGenerateEmail, aiTranslate, aiGenerateSubjects, aiGenerateSequence } from "@/lib/ai-api";
+import { ProofreadDialog } from "@/components/proofread-dialog";
 
 const templateTypeLabels: Record<string, string> = {
   welcome: "Bienvenida",
@@ -108,6 +109,8 @@ export default function EmailTemplates() {
   const [sequenceOpen, setSequenceOpen] = useState(false);
   const [seqBookId, setSeqBookId] = useState<number>(0);
   const [seqLang, setSeqLang] = useState<string>("es");
+  const [proofreadOpen, setProofreadOpen] = useState(false);
+  const [proofreadInitialText, setProofreadInitialText] = useState("");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -537,6 +540,13 @@ export default function EmailTemplates() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      const plainText = template.bodyText || template.bodyHtml?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || "";
+                      setProofreadInitialText(plainText);
+                      setProofreadOpen(true);
+                    }} title="Corrector Ortotipográfico">
+                      <SpellCheck className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleAiSubjects(template.id)} title="A/B Asuntos IA" disabled={aiLoading === "subjects"}>
                       {aiLoading === "subjects" && subjectTemplateId === template.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     </Button>
@@ -811,6 +821,13 @@ export default function EmailTemplates() {
           </div>
         </div>
       )}
+
+      <ProofreadDialog
+        open={proofreadOpen}
+        onOpenChange={setProofreadOpen}
+        initialText={proofreadInitialText}
+        onToast={toast}
+      />
     </div>
   );
 }

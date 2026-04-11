@@ -61,9 +61,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText, Eye, X, Languages, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Globe, ExternalLink, FileText, Eye, X, Languages, Loader2, SpellCheck } from "lucide-react";
 import type { LandingPage } from "@workspace/api-client-react";
 import { aiTranslate } from "@/lib/ai-api";
+import { ProofreadDialog } from "@/components/proofread-dialog";
 
 const languageLabels: Record<string, string> = {
   es: "Español", en: "English", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano",
@@ -94,6 +95,8 @@ export default function LandingPages() {
   const [filterLanguage, setFilterLanguage] = useState<string>("all");
   const [previewPage, setPreviewPage] = useState<LandingPage | null>(null);
   const [translating, setTranslating] = useState(false);
+  const [proofreadOpen, setProofreadOpen] = useState(false);
+  const [proofreadInitialText, setProofreadInitialText] = useState("");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -663,6 +666,15 @@ export default function LandingPages() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      const desc = page.description || "";
+                      const hook = (page as any).hookText || "";
+                      const combined = [desc, hook].filter(Boolean).join("\n\n");
+                      setProofreadInitialText(combined);
+                      setProofreadOpen(true);
+                    }} title="Corrector Ortotipográfico">
+                      <SpellCheck className="h-4 w-4" />
+                    </Button>
                     <Select onValueChange={(lang) => handleTranslateLp(page, lang)}>
                       <SelectTrigger className="w-8 h-8 p-0 border-0 bg-transparent justify-center" title="Traducir">
                         <Languages className="h-4 w-4" />
@@ -781,6 +793,13 @@ export default function LandingPages() {
           </div>
         </div>
       )}
+
+      <ProofreadDialog
+        open={proofreadOpen}
+        onOpenChange={setProofreadOpen}
+        initialText={proofreadInitialText}
+        onToast={toast}
+      />
     </div>
   );
 }
