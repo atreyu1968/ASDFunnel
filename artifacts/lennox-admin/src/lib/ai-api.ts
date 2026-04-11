@@ -65,3 +65,13 @@ export async function aiGenerateSeriesSummary(seriesId: number) {
   if (!res.ok) throw new Error(data.error || "Error al generar resumen");
   return data;
 }
+
+export async function aiGenerateSpinoffGuide(seriesId: number) {
+  const res = await fetch(`${API_BASE}api/series/${seriesId}/generate-spinoff-guide`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar guía de spin-off");
+  return data;
+}

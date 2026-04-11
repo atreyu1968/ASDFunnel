@@ -407,4 +407,104 @@ Responde SOLO con el JSON.`;
   }
 });
 
+router.post("/ai/generate-spinoff-guide", async (req, res): Promise<void> => {
+  try {
+    const seriesId = Number(req.body.seriesId);
+    if (!isPositiveInt(seriesId)) {
+      res.status(400).json({ error: "seriesId es requerido y debe ser un número válido" });
+      return;
+    }
+
+    const [series] = await db
+      .select()
+      .from(seriesTable)
+      .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
+      .where(eq(seriesTable.id, seriesId));
+
+    if (!series) {
+      res.status(404).json({ error: "Serie no encontrada" });
+      return;
+    }
+
+    let parentSeriesInfo = "";
+    if (series.series.crossoverFromSeriesId) {
+      const [parentSeries] = await db
+        .select()
+        .from(seriesTable)
+        .where(eq(seriesTable.id, series.series.crossoverFromSeriesId));
+
+      if (parentSeries) {
+        const parentBooks = await db
+          .select()
+          .from(booksTable)
+          .where(eq(booksTable.seriesId, parentSeries.id))
+          .orderBy(booksTable.bookNumber);
+
+        const parentBooksInfo = parentBooks
+          .map((b) => `#${b.bookNumber} "${b.title}": ${b.description || "Sin descripción"}`)
+          .join("\n");
+
+        parentSeriesInfo = `
+Serie original (de la que es spin-off):
+  Nombre: "${parentSeries.name}"
+  Género: "${parentSeries.genre || "Thriller psicológico"}"
+  Descripción: "${parentSeries.description || ""}"
+  Libros:
+${parentBooksInfo}`;
+      }
+    }
+
+    const spinoffBooks = await db
+      .select()
+      .from(booksTable)
+      .where(eq(booksTable.seriesId, seriesId))
+      .orderBy(booksTable.bookNumber);
+
+    const spinoffBooksInfo = spinoffBooks.length > 0
+      ? spinoffBooks.map((b) => `#${b.bookNumber} "${b.title}": ${b.description || "Sin descripción"}`).join("\n")
+      : "Aún no tiene libros definidos";
+
+    const lang = series.series.language || "es";
+    const langName = LANG_NAMES[lang] || lang;
+
+    const prompt = `Eres un experto en desarrollo de series de thrillers psicológicos y planificación editorial de spin-offs.
+
+Serie spin-off: "${series.series.name}"
+Autor: "${series.authors.penName}"
+Género: "${series.series.genre || "Thriller psicológico"}"
+Descripción: "${series.series.description || ""}"
+Idioma: ${langName}
+Libros del spin-off:
+${spinoffBooksInfo}
+${parentSeriesInfo}
+
+Genera en ${langName} una guía completa para desarrollar este spin-off. Responde con un JSON:
+{
+  "connectionStrategy": "Estrategia detallada de conexión con la serie original: qué personajes, tramas o elementos del universo reutilizar y cómo. (200-400 caracteres)",
+  "uniqueAngle": "Ángulo único del spin-off: qué lo diferencia de la serie original y por qué los lectores lo querrán leer. (150-300 caracteres)",
+  "suggestedBooks": [
+    {
+      "number": 1,
+      "suggestedTitle": "Título sugerido",
+      "premise": "Premisa del libro (100-200 caracteres)",
+      "connectionToOriginal": "Cómo se conecta con la serie original (80-150 caracteres)"
+    }
+  ],
+  "crossPromotionIdeas": "Ideas para promoción cruzada entre la serie original y el spin-off (200-400 caracteres)",
+  "timelineRecommendation": "Recomendación de cronología narrativa respecto a la serie original (100-200 caracteres)",
+  "targetAudience": "Audiencia objetivo del spin-off y cómo atraer tanto lectores existentes como nuevos (150-300 caracteres)"
+}
+
+Sugiere 3-5 libros en suggestedBooks.
+Responde SOLO con el JSON.`;
+
+    const content = await callAi(prompt, { maxTokens: 2500 });
+    const generated = parseJsonResponse(content);
+
+    res.json({ success: true, ...generated });
+  } catch (error: any) {
+    handleAiError(error, req, res);
+  }
+});
+
 export default router;
