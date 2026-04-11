@@ -1,0 +1,113 @@
+v8c78df7c7c0f484497ecbca7046644da1771523124516:1  Failed to load resource: the server responded with a status of 503 ()
+escritorgemini.atreyu.net/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+favicon.jpg:1  Failed to load resource: the server responded with a status of 401 ()
+vendor.js:159 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+api/projects/17/stream:1  Failed to load resource: net::ERR_QUIC_PROTOCOL_ERROR
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+ Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anónimo) @ index-B6Q0whMF.js:52
+kdp-metadata:1 Uncaught (in promise) 
+kdp-metadata:1 Uncaught (in promise) 
+kdp-metadata:1 Uncaught (in promise) 
+kdp-metadata:1 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+ Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anónimo) @ index-B6Q0whMF.js:52
+vendor.js:159 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+api/series/16/generate-spinoff-guide:1  Failed to load resource: the server responded with a status of 500 ()
+vendor.js:159 Uncaught (in promise) 
+guides:1  Failed to load resource: the server responded with a status of 503 ()
+vendor.js:159 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+escritorgemini.atreyu.net/:1 Uncaught (in promise) 
+vendor.js:159 Uncaught (in promise) 
+projects:1  Failed to load resource: the server responded with a status of 500 ()
+projects:1  Failed to load resource: the server responded with a status of 500 ()
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 500 ()
+Error: HTTP 500
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/stream:1  Failed to load resource: the server responded with a status of 500 ()
+api/projects:1  Failed to load resource: the server responded with a status of 500 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 500 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 500 ()
+Error: HTTP 500
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 500 ()
+api/projects:1  Failed to load resource: the server responded with a status of 500 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 502 ()
+api/projects/17:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 401 ()
+Error: HTTP 401
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 401 ()
+Error: HTTP 401
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 401 ()
+Error: HTTP 401
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 401 ()
+Error: HTTP 401
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/cancel:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects/17/activity-logs?limit=200:1  Failed to load resource: the server responded with a status of 401 ()
+Error: HTTP 401
+    at index-B6Q0whMF.js:70:2383
+api/projects/17/chapters:1  Failed to load resource: the server responded with a status of 401 ()
+api/agent-statuses:1  Failed to load resource: the server responded with a status of 401 ()
+api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+api/series/16/generate-spinoff-guide:1  Failed to load resource: the server responded with a status of 500 ()
+api/series:1  Failed to load resource: the server responded with a status of 400 ()
+index-B6Q0whMF.js:459 [Series] Create error: Error: 400: {"error":"Invalid series data","details":{"formErrors":[],"fieldErrors":{"description":["String must contain at most 2000 character(s)"]}}}
+    at r0 (index-B6Q0whMF.js:8:96601)
+    at async we (index-B6Q0whMF.js:8:96802)
+    at async Object.mutationFn (index-B6Q0whMF.js:459:69034)
+onError @ index-B6Q0whMF.js:459
+api/series:1  Failed to load resource: the server responded with a status of 400 ()
+index-B6Q0whMF.js:459 [Series] Create error: Error: 400: {"error":"Invalid series data","details":{"formErrors":[],"fieldErrors":{"description":["String must contain at most 2000 character(s)"]}}}
+    at r0 (index-B6Q0whMF.js:8:96601)
+    at async we (index-B6Q0whMF.js:8:96802)
+    at async Object.mutationFn (index-B6Q0whMF.js:459:69034)
+onError @ index-B6Q0whMF.js:459
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+api/projects/17:1  Failed to load resource: the server responded with a status of 404 ()
+vendor.js:159 Uncaught (in promise) Error: Uncaught Error: No Listener: tabs:outgoing.message.ready
+api/series/16/generate-spinoff-guide:1  Failed to load resource: the server responded with a status of 500 ()
