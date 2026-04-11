@@ -68,9 +68,24 @@ router.post("/series", async (req, res): Promise<void> => {
     return;
   }
 
+  let authorId = parsed.data.authorId;
+  let language = parsed.data.language ?? "es";
+
+  if (parsed.data.crossoverFromSeriesId) {
+    const [parentSeries] = await db
+      .select({ authorId: seriesTable.authorId, language: seriesTable.language })
+      .from(seriesTable)
+      .where(eq(seriesTable.id, parsed.data.crossoverFromSeriesId));
+    if (parentSeries) {
+      authorId = parentSeries.authorId;
+      language = parentSeries.language || language;
+    }
+  }
+
   const [series] = await db.insert(seriesTable).values({
     ...parsed.data,
-    language: parsed.data.language ?? "es",
+    authorId,
+    language,
     status: parsed.data.status ?? "planned",
     displayOrder: parsed.data.displayOrder ?? 0,
   }).returning();

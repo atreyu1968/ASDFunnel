@@ -272,26 +272,29 @@ export default function Series() {
                   <FormField
                     control={form.control}
                     name="authorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Autor *</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? field.value.toString() : undefined}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar autor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {authors?.map(author => (
-                              <SelectItem key={author.id} value={author.id.toString()}>
-                                {author.penName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const hasCrossover = !!form.watch("crossoverFromSeriesId");
+                      return (
+                        <FormItem>
+                          <FormLabel>Autor *{hasCrossover ? " (heredado de serie madre)" : ""}</FormLabel>
+                          <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value ? field.value.toString() : undefined} disabled={hasCrossover}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar autor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {authors?.map(author => (
+                                <SelectItem key={author.id} value={author.id.toString()}>
+                                  {author.penName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                   <FormField
                     control={form.control}
@@ -358,7 +361,17 @@ export default function Series() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Crossover Desde (Spinoff)</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(val === "none" ? null : Number(val))} value={field.value ? field.value.toString() : "none"}>
+                        <Select onValueChange={(val) => {
+                          const selectedId = val === "none" ? null : Number(val);
+                          field.onChange(selectedId);
+                          if (selectedId && seriesList) {
+                            const parentSeries = seriesList.find(s => s.id === selectedId);
+                            if (parentSeries) {
+                              form.setValue("authorId", parentSeries.authorId);
+                              form.setValue("language", parentSeries.language || "es");
+                            }
+                          }
+                        }} value={field.value ? field.value.toString() : "none"}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Ninguna" />
