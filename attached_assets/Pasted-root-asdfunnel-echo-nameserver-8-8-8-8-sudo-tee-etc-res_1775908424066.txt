@@ -1,0 +1,80 @@
+root@asdfunnel:~# echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+root@asdfunnel:~# sudo apt update && sudo apt install -y curl
+Ign:1 http://archive.ubuntu.com/ubuntu plucky InRelease
+Ign:2 http://archive.ubuntu.com/ubuntu plucky-updates InRelease
+Ign:3 http://archive.ubuntu.com/ubuntu plucky-security InRelease
+Ign:1 http://archive.ubuntu.com/ubuntu plucky InRelease
+Ign:2 http://archive.ubuntu.com/ubuntu plucky-updates InRelease
+Ign:3 http://archive.ubuntu.com/ubuntu plucky-security InRelease
+Ign:1 http://archive.ubuntu.com/ubuntu plucky InRelease
+Ign:2 http://archive.ubuntu.com/ubuntu plucky-updates InRelease
+Ign:3 http://archive.ubuntu.com/ubuntu plucky-security InRelease
+Err:1 http://archive.ubuntu.com/ubuntu plucky InRelease
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:2 http://archive.ubuntu.com/ubuntu plucky-updates InRelease
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:3 http://archive.ubuntu.com/ubuntu plucky-security InRelease
+  Temporary failure resolving 'archive.ubuntu.com'
+All packages are up to date.    
+Warning: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/plucky/InRelease  Temporary failure resolving 'archive.ubuntu.com'
+Warning: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/plucky-updates/InRelease  Temporary failure resolving 'archive.ubuntu.com'
+Warning: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/plucky-security/InRelease  Temporary failure resolving 'archive.ubuntu.com'
+Warning: Some index files failed to download. They have been ignored, or old ones used instead.
+Installing:                     
+  curl
+
+Installing dependencies:
+  libbrotli1  libcurl4t64  libldap-common  libldap2  librtmp1  libssh2-1t64
+
+Summary:
+  Upgrading: 0, Installing: 7, Removing: 0, Not Upgrading: 0
+  Download size: 1518 kB
+  Space needed: 3914 kB / 19.1 GB available
+
+Ign:1 http://archive.ubuntu.com/ubuntu plucky/main amd64 libbrotli1 amd64 1.1.0-2build4
+Ign:2 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap-common all 2.6.9+dfsg-2ubuntu1
+Ign:3 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap2 amd64 2.6.9+dfsg-2ubuntu1
+Ign:4 http://archive.ubuntu.com/ubuntu plucky/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7
+Ign:5 http://archive.ubuntu.com/ubuntu plucky/main amd64 libssh2-1t64 amd64 1.11.1-1
+Ign:6 http://archive.ubuntu.com/ubuntu plucky/main amd64 libcurl4t64 amd64 8.12.1-3ubuntu1
+Ign:7 http://archive.ubuntu.com/ubuntu plucky/main amd64 curl amd64 8.12.1-3ubuntu1
+Ign:1 http://archive.ubuntu.com/ubuntu plucky/main amd64 libbrotli1 amd64 1.1.0-2build4
+Ign:2 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap-common all 2.6.9+dfsg-2ubuntu1
+Ign:3 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap2 amd64 2.6.9+dfsg-2ubuntu1
+Ign:4 http://archive.ubuntu.com/ubuntu plucky/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7
+Ign:5 http://archive.ubuntu.com/ubuntu plucky/main amd64 libssh2-1t64 amd64 1.11.1-1
+Ign:6 http://archive.ubuntu.com/ubuntu plucky/main amd64 libcurl4t64 amd64 8.12.1-3ubuntu1
+Ign:7 http://archive.ubuntu.com/ubuntu plucky/main amd64 curl amd64 8.12.1-3ubuntu1
+Ign:1 http://archive.ubuntu.com/ubuntu plucky/main amd64 libbrotli1 amd64 1.1.0-2build4
+Ign:2 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap-common all 2.6.9+dfsg-2ubuntu1
+Ign:3 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap2 amd64 2.6.9+dfsg-2ubuntu1
+Ign:4 http://archive.ubuntu.com/ubuntu plucky/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7
+Ign:5 http://archive.ubuntu.com/ubuntu plucky/main amd64 libssh2-1t64 amd64 1.11.1-1
+Ign:6 http://archive.ubuntu.com/ubuntu plucky/main amd64 libcurl4t64 amd64 8.12.1-3ubuntu1
+Ign:7 http://archive.ubuntu.com/ubuntu plucky/main amd64 curl amd64 8.12.1-3ubuntu1
+Err:1 http://archive.ubuntu.com/ubuntu plucky/main amd64 libbrotli1 amd64 1.1.0-2build4
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:2 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap-common all 2.6.9+dfsg-2ubuntu1
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:3 http://archive.ubuntu.com/ubuntu plucky/main amd64 libldap2 amd64 2.6.9+dfsg-2ubuntu1
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:4 http://archive.ubuntu.com/ubuntu plucky/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2build7
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:5 http://archive.ubuntu.com/ubuntu plucky/main amd64 libssh2-1t64 amd64 1.11.1-1
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:6 http://archive.ubuntu.com/ubuntu plucky/main amd64 libcurl4t64 amd64 8.12.1-3ubuntu1
+  Temporary failure resolving 'archive.ubuntu.com'
+Err:7 http://archive.ubuntu.com/ubuntu plucky/main amd64 curl amd64 8.12.1-3ubuntu1
+  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/b/brotli/libbrotli1_1.1.0-2build4_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/o/openldap/libldap-common_2.6.9%2bdfsg-2ubuntu1_all.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/o/openldap/libldap2_2.6.9%2bdfsg-2ubuntu1_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/r/rtmpdump/librtmp1_2.4%2b20151223.gitfa8646d.1-2build7_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/libs/libssh2/libssh2-1t64_1.11.1-1_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/c/curl/libcurl4t64_8.12.1-3ubuntu1_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Failed to fetch http://archive.ubuntu.com/ubuntu/pool/main/c/curl/curl_8.12.1-3ubuntu1_amd64.deb  Temporary failure resolving 'archive.ubuntu.com'
+Error: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+root@asdfunnel:~# 
