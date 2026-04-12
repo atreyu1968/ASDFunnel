@@ -191,7 +191,17 @@ export default function Books() {
     },
   });
 
-  const onSubmit = (data: BookFormValues) => {
+  const onSubmit = (rawData: BookFormValues) => {
+    const data = {
+      ...rawData,
+      publicationDate: rawData.publicationDate || null,
+      scheduledDate: rawData.scheduledDate || null,
+      subtitle: rawData.subtitle || null,
+      description: rawData.description || null,
+      asin: rawData.asin || null,
+      isbn: rawData.isbn || null,
+      books2readUrl: rawData.books2readUrl || null,
+    };
     if (editingBookId) {
       updateBook.mutate({ id: editingBookId, data }, {
         onSuccess: () => {
