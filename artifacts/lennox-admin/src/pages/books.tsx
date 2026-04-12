@@ -103,6 +103,7 @@ async function uploadFileToStorage(file: File): Promise<{ objectPath: string }> 
   const res = await fetch(`${API_BASE}api/storage/uploads/request-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
   });
   if (!res.ok) throw new Error("No se pudo solicitar la URL de subida");
