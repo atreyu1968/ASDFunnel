@@ -154,11 +154,14 @@ router.post("/books", async (req, res): Promise<void> => {
     action: "created",
   });
 
-  res.status(201).json(ListBooksResponseItem.parse({
+  res.status(201).json({
     ...book,
+    publicationDate: book.publicationDate ? String(book.publicationDate) : null,
+    scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null,
+    createdAt: String(book.createdAt),
     seriesName: seriesInfo?.seriesName ?? "",
     authorPenName: seriesInfo?.authorPenName ?? "",
-  }));
+  });
 });
 
 router.get("/books/:id", async (req, res): Promise<void> => {
@@ -266,11 +269,14 @@ router.put("/books/:id", async (req, res): Promise<void> => {
     .innerJoin(authorsTable, eq(seriesTable.authorId, authorsTable.id))
     .where(eq(seriesTable.id, book.seriesId));
 
-  res.json(ListBooksResponseItem.parse({
+  res.json({
     ...book,
+    publicationDate: book.publicationDate ? String(book.publicationDate) : null,
+    scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null,
+    createdAt: String(book.createdAt),
     seriesName: seriesInfo?.seriesName ?? "",
     authorPenName: seriesInfo?.authorPenName ?? "",
-  }));
+  });
 });
 
 router.post("/books/:id/upload-manuscript", async (req, res): Promise<void> => {
