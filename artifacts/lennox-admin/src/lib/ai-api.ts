@@ -4,6 +4,7 @@ export async function aiGenerateEmail(bookId: number, templateType: string, lang
   const res = await fetch(`${API_BASE}api/ai/generate-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ bookId, templateType, language }),
   });
   const data = await res.json();
@@ -15,6 +16,7 @@ export async function aiTranslate(content: Record<string, any>, fromLanguage: st
   const res = await fetch(`${API_BASE}api/ai/translate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ content, fromLanguage, toLanguage, contentType }),
   });
   const data = await res.json();
@@ -26,6 +28,7 @@ export async function aiGenerateKdp(bookId: number) {
   const res = await fetch(`${API_BASE}api/ai/generate-kdp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ bookId }),
   });
   const data = await res.json();
@@ -37,6 +40,7 @@ export async function aiGenerateSequence(bookId: number, language: string, email
   const res = await fetch(`${API_BASE}api/ai/generate-sequence`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ bookId, language, emailCount }),
   });
   const data = await res.json();
@@ -48,6 +52,7 @@ export async function aiGenerateSubjects(templateId: number, count?: number) {
   const res = await fetch(`${API_BASE}api/ai/generate-subjects`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ templateId, count }),
   });
   const data = await res.json();
@@ -59,6 +64,7 @@ export async function aiGenerateSeriesSummary(seriesId: number) {
   const res = await fetch(`${API_BASE}api/ai/generate-series-summary`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ seriesId }),
   });
   const data = await res.json();
@@ -70,6 +76,7 @@ export async function aiProofread(params: { bookId?: number; text?: string }) {
   const res = await fetch(`${API_BASE}api/ai/proofread`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(params),
   });
   const data = await res.json();
@@ -90,6 +97,7 @@ export async function aiGenerateSpinoffGuide(seriesId: number) {
   const res = await fetch(`${API_BASE}api/series/${seriesId}/generate-spinoff-guide`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Error al generar guía de spin-off");

@@ -292,6 +292,7 @@ export default function Books() {
       const res = await fetch(`${API_BASE}api/books/${bookId}/upload-manuscript`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ manuscriptObjectPath: objectPath, generateLandingPage: true }),
       });
       const result = await res.json();
