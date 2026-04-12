@@ -1351,6 +1351,9 @@ components:
         brandDescription:
           type: string
           nullable: true
+        domain:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1371,6 +1374,9 @@ components:
           type: string
           nullable: true
         brandDescription:
+          type: string
+          nullable: true
+        domain:
           type: string
           nullable: true
       required: [penName]

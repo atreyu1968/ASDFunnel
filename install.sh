@@ -523,10 +523,7 @@ server {
 
     client_max_body_size 50M;
 
-    root $FRONTEND_DIR;
-    index index.html;
-
-    location /api/ {
+    location / {
         proxy_pass http://127.0.0.1:$APP_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
@@ -537,21 +534,6 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_read_timeout 120s;
-        proxy_cache off;
-    }
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    location = /index.html {
-        add_header Cache-Control "no-store, no-cache, must-revalidate";
-        expires -1;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)\$ {
-        expires 30d;
-        add_header Cache-Control "public, immutable";
     }
 }
 NGINX

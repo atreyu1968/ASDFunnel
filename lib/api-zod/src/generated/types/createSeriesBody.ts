@@ -10,6 +10,7 @@ import type { CreateSeriesBodyStatus } from "./createSeriesBodyStatus";
 export interface CreateSeriesBody {
   authorId: number;
   name: string;
+  /** @maxLength 50000 */
   description?: string | null;
   genre?: string | null;
   language?: string;

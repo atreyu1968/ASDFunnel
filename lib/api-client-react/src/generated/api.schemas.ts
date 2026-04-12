@@ -16,6 +16,7 @@ export interface Author {
   bio?: string | null;
   genreFocus?: string | null;
   brandDescription?: string | null;
+  domain?: string | null;
   createdAt: string;
 }
 
@@ -25,6 +26,7 @@ export interface CreateAuthorBody {
   bio?: string | null;
   genreFocus?: string | null;
   brandDescription?: string | null;
+  domain?: string | null;
 }
 
 export type SeriesStatus = (typeof SeriesStatus)[keyof typeof SeriesStatus];
@@ -155,6 +157,7 @@ export const CreateSeriesBodyStatus = {
 export interface CreateSeriesBody {
   authorId: number;
   name: string;
+  /** @maxLength 50000 */
   description?: string | null;
   genre?: string | null;
   language?: string;
@@ -208,6 +211,7 @@ export interface CreateBookBody {
   bookNumber: number;
   title: string;
   subtitle?: string | null;
+  /** @maxLength 50000 */
   description?: string | null;
   language?: string;
   wordCount?: number | null;

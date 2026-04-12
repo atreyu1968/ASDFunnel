@@ -13,5 +13,6 @@ export interface Author {
   bio?: string | null;
   genreFocus?: string | null;
   brandDescription?: string | null;
+  domain?: string | null;
   createdAt: Date;
 }

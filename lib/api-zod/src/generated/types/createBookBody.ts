@@ -15,6 +15,7 @@ export interface CreateBookBody {
   bookNumber: number;
   title: string;
   subtitle?: string | null;
+  /** @maxLength 50000 */
   description?: string | null;
   language?: string;
   wordCount?: number | null;

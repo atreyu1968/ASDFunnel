@@ -121,10 +121,12 @@ export const ListSeriesResponse = zod.array(ListSeriesResponseItem);
 /**
  * @summary Create a new series
  */
+export const createSeriesBodyDescriptionMax = 50000;
+
 export const CreateSeriesBody = zod.object({
   authorId: zod.number(),
   name: zod.string(),
-  description: zod.string().max(50000).nullish(),
+  description: zod.string().max(createSeriesBodyDescriptionMax).nullish(),
   genre: zod.string().nullish(),
   language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
@@ -203,10 +205,12 @@ export const UpdateSeriesParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const updateSeriesBodyDescriptionMax = 50000;
+
 export const UpdateSeriesBody = zod.object({
   authorId: zod.number(),
   name: zod.string(),
-  description: zod.string().max(50000).nullish(),
+  description: zod.string().max(updateSeriesBodyDescriptionMax).nullish(),
   genre: zod.string().nullish(),
   language: zod.string().optional(),
   status: zod.enum(["active", "planned", "completed"]).optional(),
@@ -278,9 +282,6 @@ export const ListBooksResponseItem = zod.object({
   books2readUrl: zod.string().nullish(),
   coverImageUrl: zod.string().nullish(),
   manuscriptPath: zod.string().nullish(),
-  downloadEpubPath: zod.string().nullish(),
-  downloadPdfPath: zod.string().nullish(),
-  downloadAzw3Path: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
@@ -291,12 +292,14 @@ export const ListBooksResponse = zod.array(ListBooksResponseItem);
 /**
  * @summary Create a new book
  */
+export const createBookBodyDescriptionMax = 50000;
+
 export const CreateBookBody = zod.object({
   seriesId: zod.number(),
   bookNumber: zod.number(),
   title: zod.string(),
   subtitle: zod.string().nullish(),
-  description: zod.string().max(50000).nullish(),
+  description: zod.string().max(createBookBodyDescriptionMax).nullish(),
   language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod.enum([
@@ -317,9 +320,6 @@ export const CreateBookBody = zod.object({
   books2readUrl: zod.string().nullish(),
   coverImageUrl: zod.string().nullish(),
   manuscriptPath: zod.string().nullish(),
-  downloadEpubPath: zod.string().nullish(),
-  downloadPdfPath: zod.string().nullish(),
-  downloadAzw3Path: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
 });
 
@@ -357,9 +357,6 @@ export const GetBookResponse = zod.object({
   books2readUrl: zod.string().nullish(),
   coverImageUrl: zod.string().nullish(),
   manuscriptPath: zod.string().nullish(),
-  downloadEpubPath: zod.string().nullish(),
-  downloadPdfPath: zod.string().nullish(),
-  downloadAzw3Path: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
@@ -377,7 +374,7 @@ export const UpdateBookBody = zod.object({
   bookNumber: zod.number().optional(),
   title: zod.string().optional(),
   subtitle: zod.string().nullish(),
-  description: zod.string().max(50000).nullish(),
+  description: zod.string().nullish(),
   language: zod.string().optional(),
   wordCount: zod.number().nullish(),
   funnelRole: zod
@@ -399,9 +396,6 @@ export const UpdateBookBody = zod.object({
   books2readUrl: zod.string().nullish(),
   coverImageUrl: zod.string().nullish(),
   manuscriptPath: zod.string().nullish(),
-  downloadEpubPath: zod.string().nullish(),
-  downloadPdfPath: zod.string().nullish(),
-  downloadAzw3Path: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
 });
 
@@ -432,9 +426,6 @@ export const UpdateBookResponse = zod.object({
   books2readUrl: zod.string().nullish(),
   coverImageUrl: zod.string().nullish(),
   manuscriptPath: zod.string().nullish(),
-  downloadEpubPath: zod.string().nullish(),
-  downloadPdfPath: zod.string().nullish(),
-  downloadAzw3Path: zod.string().nullish(),
   crossoverToSeriesId: zod.number().nullish(),
   seriesName: zod.string(),
   authorPenName: zod.string(),
