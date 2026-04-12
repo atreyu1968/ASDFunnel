@@ -87,6 +87,7 @@ export default function Authors() {
       bio: "",
       genreFocus: "",
       brandDescription: "",
+      domain: "",
     },
   });
 
@@ -127,6 +128,7 @@ export default function Authors() {
       bio: author.bio || "",
       genreFocus: author.genreFocus || "",
       brandDescription: author.brandDescription || "",
+      domain: author.domain || "",
     });
     setIsCreateOpen(true);
   };
@@ -160,6 +162,7 @@ export default function Authors() {
               bio: "",
               genreFocus: "",
               brandDescription: "",
+              domain: "",
             });
           }
         }}>
@@ -318,10 +321,10 @@ export default function Authors() {
                       <span className="font-medium">{author.realName}</span>
                     </div>
                   )}
-                  {(author as any).domain && (
+                  {author.domain && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Dominio:</span>
-                      <span className="font-medium text-primary">{(author as any).domain}</span>
+                      <span className="font-medium text-primary">{author.domain}</span>
                     </div>
                   )}
                   <div className="flex flex-col mt-2">

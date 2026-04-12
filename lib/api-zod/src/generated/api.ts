@@ -24,6 +24,7 @@ export const ListAuthorsResponseItem = zod.object({
   bio: zod.string().nullish(),
   genreFocus: zod.string().nullish(),
   brandDescription: zod.string().nullish(),
+  domain: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListAuthorsResponse = zod.array(ListAuthorsResponseItem);
@@ -37,6 +38,7 @@ export const CreateAuthorBody = zod.object({
   bio: zod.string().nullish(),
   genreFocus: zod.string().nullish(),
   brandDescription: zod.string().nullish(),
+  domain: zod.string().nullish(),
 });
 
 /**
@@ -53,6 +55,7 @@ export const GetAuthorResponse = zod.object({
   bio: zod.string().nullish(),
   genreFocus: zod.string().nullish(),
   brandDescription: zod.string().nullish(),
+  domain: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -69,6 +72,7 @@ export const UpdateAuthorBody = zod.object({
   bio: zod.string().nullish(),
   genreFocus: zod.string().nullish(),
   brandDescription: zod.string().nullish(),
+  domain: zod.string().nullish(),
 });
 
 export const UpdateAuthorResponse = zod.object({
@@ -78,6 +82,7 @@ export const UpdateAuthorResponse = zod.object({
   bio: zod.string().nullish(),
   genreFocus: zod.string().nullish(),
   brandDescription: zod.string().nullish(),
+  domain: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 
