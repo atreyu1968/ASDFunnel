@@ -1,0 +1,81 @@
+root@asdfunnel:/opt/asdfunnel# # 1. Verificar qué Nginx config está activa
+cat /etc/nginx/sites-available/asdfunnel
+
+# 2. Verificar que el autor tiene el dominio en la BD de producción
+curl -s http://localhost:5000/api/authors
+
+# 3. Probar la landing directamente en Node.js (sin pasar por Nginx)
+curl -s -H "Host: lennoxdrent.com" http://localhost:5000/ | head -10
+# ──────────────────────────────────────────────────────────────────────────────
+# Servidor principal: Panel Admin + API
+# Dominio admin: asdfunnel.atreyu.net
+# Todo dominio NO reconocido como autor → panel admin
+# ──────────────────────────────────────────────────────────────────────────────
+server {
+    listen 80 default_server;
+    server_name _;
+
+    client_max_body_size 50M;
+
+    root /var/www/asdfunnel/artifacts/lennox-admin/dist/public;
+    index index.html;
+
+    # API proxy → Node.js backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+
+    # Frontend SPA (panel admin)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache de assets estáticos (30 días)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dominios de autores → Landing pages públicas
+# Cualquier dominio que NO sea el del admin se envía a Node.js,
+# que detecta el dominio del autor via el header Host y sirve la landing.
+# Para añadir un dominio de autor: solo apunta su DNS a esta IP.
+# ──────────────────────────────────────────────────────────────────────────────
+# NOTA: Cuando configures dominios de autores, añade un bloque server aquí:
+#
+# server {
+#     listen 80;
+#     server_name elizabethblack.com www.elizabethblack.com;
+#     client_max_body_size 50M;
+#     location / {
+#         proxy_pass http://127.0.0.1:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }
+#
+# O usa el script: sudo bash /var/www/asdfunnel/add-author-domain.sh elizabethblack.com
+{"error":"No autenticado"}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lennox Drent</title>
+  <meta name="description" content="">
+  <meta property="og:title" content="Lennox Drent">
+  <meta property="og:description" content="">
+  <meta property="og:type" content="website">
+root@asdfunnel:/opt/asdfunnel# 
