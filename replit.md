@@ -92,15 +92,30 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
+## Authentication
+- Admin panel protected by password login (scrypt hash stored in `ADMIN_PASSWORD_HASH` env var)
+- Auth routes: `POST /api/auth/login`, `GET /api/auth/check`, `POST /api/auth/logout`
+- Auth middleware (`middleware/auth.ts`) protects all `/api/*` routes except `/api/auth/*`, `/api/public/*`, `/api/capture/*`, `/api/confirmation/*`, `/api/health`
+- If `ADMIN_PASSWORD_HASH` is not set, auth is bypassed (allows development without password)
+- Sessions stored in-memory (`activeSessions` Set), cookie-based (`asd_session`, HttpOnly, 7-day expiry)
+- Frontend: `App.tsx` checks auth on load, shows `login.tsx` if not authenticated; `main-layout.tsx` has logout button
+- `change-password.sh` — helper script to change admin password
+- **custom-fetch.ts**: All API client requests include `credentials: "include"` for cookie-based auth
+
 ## Production Deployment (Ubuntu)
-- `install.sh` — autoinstaller for Ubuntu 22.04/24.04 (systemd + Nginx + PostgreSQL + optional Cloudflare Tunnel)
+- `install.sh` — autoinstaller/updater for Ubuntu 22.04/24.04 (systemd + Nginx + PostgreSQL + optional Cloudflare Tunnel)
+- Asks for admin password during install; detects updates and preserves existing config
 - Config stored in `/etc/asdfunnel/env` (preserved across updates)
+- Nginx root must point to `dist/public` (NOT `dist/`) — Vite outputs to `dist/public/`
+- Build: only compile `@workspace/api-server` and `@workspace/lennox-admin` — skip `mockup-sandbox` (dev-only, needs PORT env var)
+- Express 5 wildcard routes: use `"*path"` not `"*"` (path-to-regexp v8 requirement)
 - Nginx serves frontend static files at `/`, proxies `/api/*` to Node.js (port 5000)
-- In production, API server (`app.ts`) serves frontend static files as fallback for SPA routing
+- In production, API server (`app.ts`) also serves frontend static files as fallback for SPA routing
 - Local file storage (`localFileStorage.ts`) replaces Replit GCS sidecar, files saved to `$UPLOAD_DIR`
 - Storage route selection: Replit uses GCS (`storage.ts`), production uses local files (`localStorageRoutes.ts`)
 - `APP_BASE_URL` env var used for confirmation/unsubscribe email links
 - Vite config defaults: `BASE_PATH=/` and `PORT=3000` when building for production
+- DB push needs DATABASE_URL exported: `export $(grep -v '^#' /etc/asdfunnel/env | xargs) && pnpm --filter @workspace/db run push`
 - GitHub repo: https://github.com/atreyu1968/ASDFunnel
 
 ## Seed Data

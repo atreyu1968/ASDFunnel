@@ -1,8 +1,8 @@
 # ASD FUNNEL
 
-**Panel de Gestión Editorial Automatizado** por [Atreyu Servicios Digitales](https://atreyu.es)
+**Panel de Gestion Editorial Automatizado** por [Atreyu Servicios Digitales](https://atreyu.es)
 
-Sistema completo de gestión de publicaciones digitales para thrillers psicológicos. Gestiona autores, series, libros, landing pages multilenguaje, email marketing con doble opt-in, y 6 automatizaciones IA. Distribución amplia vía Draft2Digital (D2D).
+Sistema completo de gestion de publicaciones digitales para thrillers psicologicos. Gestiona autores, series, libros, landing pages multilenguaje, email marketing con doble opt-in, corrector editorial IA de 14 fases, y 8 automatizaciones IA. Distribucion amplia via Draft2Digital (D2D).
 
 ---
 
@@ -10,14 +10,16 @@ Sistema completo de gestión de publicaciones digitales para thrillers psicológ
 
 - [Requisitos](#requisitos)
 - [Instalacion Rapida](#instalacion-rapida)
+- [Actualizacion](#actualizacion)
 - [Instalacion Manual](#instalacion-manual)
 - [Configuracion](#configuracion)
+- [Seguridad](#seguridad)
 - [Arquitectura](#arquitectura)
 - [Funcionalidades](#funcionalidades)
 - [Automatizaciones IA](#automatizaciones-ia)
+- [Corrector Editorial IA](#corrector-editorial-ia)
 - [Modelo de Distribucion](#modelo-de-distribucion)
 - [Comandos de Administracion](#comandos-de-administracion)
-- [Actualizacion](#actualizacion)
 - [Cloudflare Tunnel](#cloudflare-tunnel)
 - [Solucion de Problemas](#solucion-de-problemas)
 - [Stack Tecnologico](#stack-tecnologico)
@@ -36,7 +38,7 @@ Sistema completo de gestión de publicaciones digitales para thrillers psicológ
 
 ## Instalacion Rapida
 
-En un **servidor Ubuntu recien instalado** (sin nada configurado), ejecuta estos 2 comandos:
+En un **servidor Ubuntu recien instalado**, ejecuta estos 2 comandos:
 
 ```bash
 apt-get update && apt-get install -y curl
@@ -44,27 +46,36 @@ curl -fsSL https://raw.githubusercontent.com/atreyu1968/ASDFunnel/main/install.s
 ```
 
 El script se encarga de **todo** automaticamente:
-1. Actualiza el sistema e instala paquetes base (curl, git, build-essential, openssl)
+1. Actualiza el sistema e instala paquetes base
 2. Instala Node.js 20 y pnpm 9
 3. Instala y configura PostgreSQL (crea usuario y base de datos)
 4. Clona el repositorio desde GitHub
-5. Compila frontend (React + Vite) y backend (Express + esbuild)
-6. Sincroniza el esquema de base de datos (Drizzle ORM)
-7. Configura systemd para auto-inicio y auto-reinicio
-8. Configura Nginx como proxy reverso (puerto 80)
-9. Configura firewall (UFW) abriendo solo puertos 22, 80, 443
-10. Opcionalmente instala Cloudflare Tunnel para HTTPS gratuito
+5. Pide dominio del panel y **contrasena de administracion**
+6. Compila frontend (React + Vite) y backend (Express + esbuild)
+7. Sincroniza el esquema de base de datos (Drizzle ORM)
+8. Configura systemd para auto-inicio y auto-reinicio
+9. Configura Nginx como proxy reverso (puerto 80)
+10. Configura firewall (UFW) abriendo solo puertos 22, 80, 443
+11. Opcionalmente instala Cloudflare Tunnel para HTTPS gratuito
 
-### Actualizar
+---
 
-Si ya tienes una instalacion funcionando:
+## Actualizacion
+
+Para actualizar a la ultima version:
 
 ```bash
 sudo bash /var/www/asdfunnel/install.sh
 ```
 
-El script detecta la instalacion existente, preserva toda tu configuracion
-(credenciales de BD, secretos, variables) y solo actualiza el codigo y recompila.
+El script detecta automaticamente que es una actualizacion y:
+- Preserva las credenciales de base de datos
+- Preserva la configuracion y contrasena existentes
+- Si no hay contrasena configurada, la pide
+- Actualiza el codigo fuente desde GitHub
+- Recompila frontend y backend (sin compilar componentes innecesarios)
+- Sincroniza el esquema de BD (sin perder datos)
+- Reinicia los servicios
 
 ---
 
@@ -90,12 +101,9 @@ sudo npm install -g pnpm@9
 ### 2. Base de datos
 
 ```bash
-# Crear usuario y base de datos
-sudo -u postgres psql -c "CREATE USER asdfunnel WITH PASSWORD 'tu_contraseña_segura';"
+sudo -u postgres psql -c "CREATE USER asdfunnel WITH PASSWORD 'tu_contrasena_segura';"
 sudo -u postgres psql -c "CREATE DATABASE asdfunnel OWNER asdfunnel;"
-
-# Asegurar acceso por contraseña en pg_hba.conf
-# Agregar: local asdfunnel asdfunnel md5
+sudo -u postgres psql -d asdfunnel -c "GRANT ALL ON SCHEMA public TO asdfunnel;"
 sudo systemctl reload postgresql
 ```
 
@@ -111,32 +119,42 @@ cd /var/www/asdfunnel
 
 ```bash
 sudo mkdir -p /etc/asdfunnel
+
+# Generar hash de contrasena
+read -sp "Contrasena admin: " PASS && echo ""
+HASH=$(node -e "
+  const crypto = require('crypto');
+  const salt = crypto.randomBytes(16).toString('hex');
+  crypto.scrypt(process.argv[1], salt, 64, (err, key) => {
+    process.stdout.write(salt + ':' + key.toString('hex'));
+  });
+" "$PASS")
+
 sudo cat > /etc/asdfunnel/env << EOF
 NODE_ENV=production
 PORT=5000
-DATABASE_URL=postgresql://asdfunnel:tu_contraseña_segura@localhost:5432/asdfunnel
+DATABASE_URL=postgresql://asdfunnel:tu_contrasena_segura@localhost:5432/asdfunnel
 SESSION_SECRET=$(openssl rand -base64 32)
 UPLOAD_DIR=/var/www/asdfunnel/uploads
 APP_BASE_URL=http://tu-dominio.com
+ADMIN_DOMAIN=tu-dominio.com
+ADMIN_PASSWORD_HASH=$HASH
 SECURE_COOKIES=false
 EOF
-sudo chmod 600 /etc/asdfunnel/env
+sudo chmod 644 /etc/asdfunnel/env
 ```
 
 ### 5. Compilar
 
 ```bash
-# Variables necesarias para el build
-export NODE_ENV=production PORT=5000 BASE_PATH="/"
-export DATABASE_URL="postgresql://asdfunnel:tu_contraseña_segura@localhost:5432/asdfunnel"
+export PORT=5000 BASE_PATH="/"
+export DATABASE_URL="postgresql://asdfunnel:tu_contrasena_segura@localhost:5432/asdfunnel"
 
-# Instalar dependencias
-pnpm install --frozen-lockfile
+# Instalar dependencias (con devDependencies para drizzle-kit)
+NODE_ENV=development pnpm install --frozen-lockfile
 
-# Compilar frontend
+# Compilar solo frontend y backend (NO compilar mockup-sandbox)
 pnpm --filter @workspace/lennox-admin run build
-
-# Compilar backend
 pnpm --filter @workspace/api-server run build
 
 # Sincronizar esquema de BD
@@ -173,6 +191,12 @@ sudo systemctl start asdfunnel
 ### 7. Nginx
 
 ```bash
+# La configuracion de Nginx sirve:
+# - /api/* -> proxy al backend Node.js (puerto 5000)
+# - /* -> archivos estaticos del frontend (dist/public)
+# Nota: el root de Nginx debe apuntar a dist/PUBLIC, no a dist/
+# Root correcto: /var/www/asdfunnel/artifacts/lennox-admin/dist/public
+
 # Ver ejemplo completo en install.sh
 sudo systemctl enable nginx
 sudo systemctl restart nginx
@@ -194,6 +218,8 @@ La configuracion se almacena en `/etc/asdfunnel/env` (fuera del repositorio para
 | `SESSION_SECRET` | Secreto para sesiones | (generado automaticamente) |
 | `UPLOAD_DIR` | Directorio de archivos subidos | `/var/www/asdfunnel/uploads` |
 | `APP_BASE_URL` | URL publica de la aplicacion | `https://tudominio.com` |
+| `ADMIN_DOMAIN` | Dominio del panel de administracion | `admin.tudominio.com` |
+| `ADMIN_PASSWORD_HASH` | Hash de la contrasena de admin | (generado por install.sh) |
 | `SECURE_COOKIES` | Cookies seguras (requiere HTTPS) | `false` o `true` |
 
 ### Configuracion desde el Panel
@@ -204,27 +230,51 @@ Desde **Configuracion** en el panel de administracion puedes configurar:
 
 ---
 
+## Seguridad
+
+El panel de administracion esta protegido por contrasena. Al acceder se muestra una pantalla de login.
+
+### Cambiar contrasena
+
+```bash
+sudo bash /var/www/asdfunnel/change-password.sh
+```
+
+### Cerrar sesion
+
+Desde el panel, usar el boton "Cerrar Sesion" en la parte inferior de la barra lateral.
+
+### Notas de seguridad
+- Las sesiones se almacenan en memoria del servidor (se pierden al reiniciar el servicio)
+- La contrasena se almacena como hash scrypt en `/etc/asdfunnel/env`
+- Las cookies de sesion son HttpOnly (no accesibles por JavaScript)
+- Para HTTPS, configurar `SECURE_COOKIES=true` y usar Cloudflare Tunnel
+
+---
+
 ## Arquitectura
 
 ```
 ASD Funnel
 ├── artifacts/
-│   ├── api-server/          # Backend Express (API REST)
+│   ├── api-server/          # Backend Express 5 (API REST)
 │   │   ├── src/
-│   │   │   ├── routes/      # Endpoints CRUD + AI + storage
+│   │   │   ├── routes/      # Endpoints CRUD + AI + auth + storage
+│   │   │   ├── middleware/   # Auth middleware
 │   │   │   └── lib/         # Utilidades (AI, storage, email)
 │   │   └── dist/            # Bundle produccion (esbuild)
 │   └── lennox-admin/        # Frontend React SPA
 │       ├── src/
-│       │   ├── pages/       # Paginas del admin
-│       │   └── components/  # Componentes UI (shadcn/ui)
+│       │   ├── pages/       # Paginas del admin (login, dashboard, etc.)
+│       │   └── components/  # Componentes UI (shadcn/ui) + corrector editorial
 │       └── dist/public/     # Build produccion (Vite)
 ├── lib/
 │   ├── db/                  # Esquema PostgreSQL (Drizzle ORM)
 │   ├── api-spec/            # Especificacion OpenAPI + codegen
 │   ├── api-client-react/    # Hooks React Query (generados)
 │   └── api-zod/             # Validadores Zod (generados)
-├── install.sh               # Autoinstalador Ubuntu
+├── install.sh               # Autoinstalador/actualizador Ubuntu
+├── change-password.sh       # Cambiar contrasena de admin
 └── README.md
 ```
 
@@ -245,9 +295,14 @@ Internet → [Cloudflare Tunnel] → Nginx (puerto 80)
 - Progreso de series activas
 - Actividad reciente
 
+### Autenticacion
+- Login con contrasena para proteger el panel
+- Sesiones seguras con cookies HttpOnly
+- Boton de cerrar sesion
+
 ### Gestion de Contenidos
 - **Autores:** Nombres de pluma, biografias, dominios web propios
-- **Series:** Series de libros con seguimiento de estado
+- **Series:** Series de libros con seguimiento de estado y contexto para IA
 - **Libros:** Catalogo completo con roles de embudo, precios, portadas, manuscritos y enlaces Books2Read
 
 ### Embudo de Ventas (Funnel)
@@ -270,7 +325,7 @@ Calendario visual de publicaciones programadas por serie.
 - Paginas multilenguaje con metadata SEO
 - Vinculadas a autores, series o libros
 - Generacion automatica de URL desde dominio del autor
-- Jerarquia autor ↔ series ↔ libros
+- Jerarquia autor - series - libros
 
 ### Automatizaciones
 Constructor de reglas trigger/accion:
@@ -280,13 +335,13 @@ Constructor de reglas trigger/accion:
 ### Almacenamiento
 - Subida de portadas e imagenes (max 50MB)
 - Carga de manuscritos .docx con generacion automatica de landing page
-- Almacenamiento local en produccion (GCS en Replit)
+- Almacenamiento local en produccion
 
 ---
 
 ## Automatizaciones IA
 
-El sistema incluye 6 automatizaciones potenciadas por IA (DeepSeek o OpenAI):
+El sistema incluye 8 automatizaciones potenciadas por IA (DeepSeek o OpenAI). Todas las automatizaciones incluyen contexto de la serie (personajes, trama) para mantener coherencia:
 
 | Automatizacion | Descripcion | Endpoint |
 |----------------|-------------|----------|
@@ -296,6 +351,8 @@ El sistema incluye 6 automatizaciones potenciadas por IA (DeepSeek o OpenAI):
 | **Secuencias Nurturing** | Genera cadenas de 2-10 emails de nutricion con programacion | `POST /api/ai/generate-sequence` |
 | **Lineas de Asunto A/B** | Genera variantes de asunto para testing A/B | `POST /api/ai/generate-subjects` |
 | **Resumen de Serie** | Genera descripcion, tagline y orden de lectura de la serie | `POST /api/ai/generate-series-summary` |
+| **Corrector Editorial** | Auditor forense de 14 fases para manuscritos y plantillas | `POST /api/ai/proofread` |
+| **Guia de Spin-off** | Genera guia para derivar nuevas series desde una existente | `POST /api/ai/generate-spinoff-guide` |
 
 ### Idiomas soportados
 Espanol (ES), Ingles (EN), Frances (FR), Aleman (DE), Italiano (IT), Portugues (PT)
@@ -304,7 +361,37 @@ Espanol (ES), Ingles (EN), Frances (FR), Aleman (DE), Italiano (IT), Portugues (
 Desde el panel de administracion > Configuracion:
 1. Selecciona el proveedor (DeepSeek o OpenAI)
 2. Introduce tu API key
-3. Opcionalmente cambia el modelo
+3. Opcionalmente cambia el modelo (deepseek-chat, gpt-4o, etc.)
+
+---
+
+## Corrector Editorial IA
+
+El corrector editorial es un auditor forense de 14 fases que analiza texto en busca de defectos tipicos de texto generado por IA. Esta disponible en las paginas de Libros, Plantillas de Email y Landing Pages.
+
+### Fases de analisis
+
+**Grupo A - Critico (rojo)**
+1. Dialogos superpuestos
+2. Cortes a mitad de frase
+3. Bucles de accion
+4. Parrafos clonados
+5. Cambios de perspectiva
+6. Rupturas temporales
+7. Personajes fantasma
+
+**Grupo B - Medio (ambar)**
+8. Cliches de IA
+9. Sobre-explicacion emocional
+10. Transiciones artificiales
+11. Dialogo exposicion
+
+**Grupo C - Editorial (azul)**
+12. Ortotipografia RAE
+13. Formato de dialogos
+14. Coherencia lexica
+
+La puntuacion maxima es 10. Si el corrector no encuentra defectos en texto generado por IA, la puntuacion se limita a 7 como medida de precaucion.
 
 ---
 
@@ -329,78 +416,50 @@ Cada libro puede incluir un **enlace universal Books2Read** (`https://books2read
 ### Servicio de la aplicacion
 
 ```bash
-# Estado
 sudo systemctl status asdfunnel
-
-# Logs en tiempo real
-sudo journalctl -u asdfunnel -f
-
-# Reiniciar
+sudo journalctl -u asdfunnel -f        # Logs en tiempo real
 sudo systemctl restart asdfunnel
-
-# Detener
 sudo systemctl stop asdfunnel
+```
 
-# Iniciar
-sudo systemctl start asdfunnel
+### Contrasena
+
+```bash
+sudo bash /var/www/asdfunnel/change-password.sh
 ```
 
 ### Base de datos
 
 ```bash
-# Conectar a la base de datos
-sudo -u postgres psql asdfunnel
+sudo -u postgres psql asdfunnel                           # Conectar
+sudo -u postgres pg_dump asdfunnel > backup_$(date +%Y%m%d).sql  # Backup
+sudo -u postgres psql asdfunnel < backup.sql              # Restaurar
 
-# Backup
-sudo -u postgres pg_dump asdfunnel > backup_$(date +%Y%m%d).sql
-
-# Restaurar
-sudo -u postgres psql asdfunnel < backup.sql
+# Sincronizar esquema despues de actualizar
+export $(grep -v '^#' /etc/asdfunnel/env | xargs)
+cd /var/www/asdfunnel && pnpm --filter @workspace/db run push
 ```
 
 ### Nginx
 
 ```bash
-# Estado
 sudo systemctl status nginx
-
-# Recargar configuracion
 sudo nginx -t && sudo systemctl reload nginx
-
-# Logs de acceso
-sudo tail -f /var/log/nginx/access.log
-
-# Logs de error
 sudo tail -f /var/log/nginx/error.log
 ```
 
 ### Verificar puertos
 
 ```bash
-# Ver puertos en uso
 ss -ltnp | grep -E ':(80|5000|5432)'
-
-# Probar conexion local
 curl http://localhost:5000/api/health
 ```
 
----
-
-## Actualizacion
-
-Para actualizar a la ultima version:
+### Dominios de autores
 
 ```bash
-sudo bash /var/www/asdfunnel/install.sh
+sudo bash /var/www/asdfunnel/add-author-domain.sh midominio.com
 ```
-
-El script detecta automaticamente que es una actualizacion y:
-- Preserva las credenciales de base de datos
-- Preserva la configuracion existente
-- Actualiza el codigo fuente
-- Recompila frontend y backend
-- Sincroniza el esquema de BD (sin perder datos)
-- Reinicia los servicios
 
 ---
 
@@ -414,22 +473,17 @@ El instalador pregunta por el token de Cloudflare Tunnel al final.
 ### Post-instalacion
 
 ```bash
-# Instalar cloudflared
 curl -L -o /tmp/cloudflared.deb \
     https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 sudo dpkg -i /tmp/cloudflared.deb
 
-# Configurar con token
 sudo cloudflared service install "TU_TOKEN_AQUI"
 sudo systemctl enable cloudflared
 sudo systemctl start cloudflared
 
-# Habilitar cookies seguras
+# Habilitar cookies seguras y actualizar dominio
 sudo sed -i 's/SECURE_COOKIES=false/SECURE_COOKIES=true/' /etc/asdfunnel/env
-
-# Actualizar APP_BASE_URL con tu dominio
 sudo sed -i 's|APP_BASE_URL=.*|APP_BASE_URL=https://tudominio.com|' /etc/asdfunnel/env
-
 sudo systemctl restart asdfunnel
 ```
 
@@ -447,27 +501,24 @@ sudo systemctl restart asdfunnel
 | Problema | Causa probable | Solucion |
 |----------|---------------|----------|
 | La app no carga | Servicio caido | `sudo systemctl restart asdfunnel` |
-| Error 502 en Nginx | El API server no responde | Verificar logs: `journalctl -u asdfunnel -n 50` |
+| Error 502 en Nginx | El API server no responde | `journalctl -u asdfunnel -n 50` |
+| Error 403 en Nginx | Root incorrecto | Verificar que apunta a `dist/public`, no `dist/` |
 | No se guardan sesiones | Cookies `secure:true` sin HTTPS | Verificar `SECURE_COOKIES=false` en `/etc/asdfunnel/env` |
-| Error de base de datos | Credenciales incorrectas | Verificar `DATABASE_URL` en `/etc/asdfunnel/env` |
-| Subida de archivos falla | Permisos en directorio uploads | `sudo chown -R asdfunnel:asdfunnel /var/www/asdfunnel/uploads` |
+| Error de base de datos | Credenciales o esquema | `export $(grep -v '^#' /etc/asdfunnel/env \| xargs) && pnpm --filter @workspace/db run push` |
+| Subida de archivos falla | Permisos en uploads | `sudo chown -R asdfunnel:asdfunnel /var/www/asdfunnel/uploads` |
 | Error 521 en Cloudflare | Tunnel no conectado | `sudo systemctl restart cloudflared` |
 | Pagina en blanco | Frontend no compilado | `sudo bash /var/www/asdfunnel/install.sh` |
-| AI no funciona | API key no configurada | Configurar desde panel > Configuracion > IA |
+| IA no funciona | API key no configurada | Panel > Configuracion > IA |
+| No puedo guardar config | Esquema de BD desactualizado | Ejecutar `pnpm --filter @workspace/db run push` con DATABASE_URL exportado |
+| Login no aparece | Falta ADMIN_PASSWORD_HASH | `sudo bash /var/www/asdfunnel/change-password.sh` |
+| Build falla con PORT | mockup-sandbox no necesario | Compilar solo: `pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/lennox-admin run build` |
 
 ### Logs utiles
 
 ```bash
-# Logs de la aplicacion
 sudo journalctl -u asdfunnel --since "1 hour ago"
-
-# Logs de Nginx
 sudo tail -20 /var/log/nginx/error.log
-
-# Logs de PostgreSQL
 sudo journalctl -u postgresql --since "1 hour ago"
-
-# Verificar configuracion
 sudo cat /etc/asdfunnel/env
 ```
 
@@ -480,6 +531,7 @@ sudo cat /etc/asdfunnel/env
 | **Frontend** | React 19, Vite 7, Tailwind CSS 4, shadcn/ui |
 | **Backend** | Express 5, Node.js 20, TypeScript 5.9 |
 | **Base de datos** | PostgreSQL + Drizzle ORM |
+| **Autenticacion** | Contrasena con hash scrypt + cookies HttpOnly |
 | **Email** | Resend |
 | **IA** | DeepSeek / OpenAI (configurable) |
 | **Build** | esbuild (backend), Vite (frontend) |

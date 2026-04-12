@@ -11,7 +11,7 @@ set -eo pipefail
 #   bash /tmp/install.sh
 #
 # Uso para actualizar:
-#   bash /var/www/asdfunnel/install.sh
+#   sudo bash /var/www/asdfunnel/install.sh
 # ==============================================================================
 
 # Colores
