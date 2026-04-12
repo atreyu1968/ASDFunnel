@@ -338,7 +338,7 @@ function render404(lang: string): string {
 }
 
 router.get("/api/public/landing-page/:id", async (req: Request, res: Response): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) { res.status(400).send("ID inválido"); return; }
 
   const [page] = await db.select().from(landingPagesTable).where(eq(landingPagesTable.id, id));
