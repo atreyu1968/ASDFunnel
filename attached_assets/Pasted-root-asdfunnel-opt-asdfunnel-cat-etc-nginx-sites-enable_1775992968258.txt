@@ -1,0 +1,159 @@
+root@asdfunnel:/opt/asdfunnel# cat /etc/nginx/sites-enabled/asdfunnel*
+# ──────────────────────────────────────────────────────────────────────────────
+# Servidor principal: Panel Admin + API
+# Dominio admin: asdfunnel.atreyu.net
+# Todo dominio NO reconocido como autor → panel admin
+# ──────────────────────────────────────────────────────────────────────────────
+server {
+    listen 80 default_server;
+    server_name _;
+
+    client_max_body_size 50M;
+
+    root /var/www/asdfunnel/artifacts/lennox-admin/dist/public;
+    index index.html;
+
+    # API proxy → Node.js backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+
+    # Frontend SPA (panel admin)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache de assets estáticos (30 días)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dominios de autores → Landing pages públicas
+# Cualquier dominio que NO sea el del admin se envía a Node.js,
+# que detecta el dominio del autor via el header Host y sirve la landing.
+# Para añadir un dominio de autor: solo apunta su DNS a esta IP.
+# ──────────────────────────────────────────────────────────────────────────────
+# NOTA: Cuando configures dominios de autores, añade un bloque server aquí:
+#
+# server {
+#     listen 80;
+#     server_name elizabethblack.com www.elizabethblack.com;
+#     client_max_body_size 50M;
+#     location / {
+#         proxy_pass http://127.0.0.1:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }
+#
+# O usa el script: sudo bash /var/www/asdfunnel/add-author-domain.sh elizabethblack.com
+root@asdfunnel:/opt/asdfunnel# # 1. ¿Qué archivo JS tiene el build actual?
+ls /opt/asdfunnel/artifacts/lennox-admin/dist/public/assets/
+
+# 2. ¿Qué referencia el index.html?
+grep -o 'index-[^"]*\.js' /opt/asdfunnel/artifacts/lennox-admin/dist/public/index.html
+
+# 3. ¿Se añadió APP_BASE_URL?
+grep APP_BASE_URL /etc/asdfunnel/env
+
+# 4. ¿El servicio está corriendo?
+systemctl status asdfunnel | head -15
+
+# 5. ¿Config de Nginx?
+cat /etc/nginx/sites-enabled/asdfunnel* 2>/dev/null || cat /etc/nginx/conf.d/asdfunnel* 2>/dev/null
+index-BgVkm15l.js  index-Bw0gtd0j.css
+index-BgVkm15l.js
+APP_BASE_URL=http://localhost:5000
+APP_BASE_URL=https://asdfunnel.atreyu.net
+* asdfunnel.service - ASD Funnel - Panel de Gestión Editorial (Atreyu Servicios Digitales)
+     Loaded: loaded (/etc/systemd/system/asdfunnel.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-04-12 11:18:59 UTC; 2min 36s ago
+ Invocation: 0f9b9c73f83547f0bf0c5ffd03c493a3
+   Main PID: 16398 (node)
+      Tasks: 11 (limit: 18752)
+     Memory: 134.8M (peak: 142.4M)
+        CPU: 2.022s
+     CGroup: /system.slice/asdfunnel.service
+             `-16398 /usr/bin/node --enable-source-maps ./dist/index.mjs
+
+Apr 12 11:19:40 asdfunnel asdfunnel[16398]: {"level":30,"time":1775992780846,"pid":16398,"hostname":"asdfunnel","req":{"id":3,"method":"GET","url":"/api/books"},"res":{"statusCode":304},"responseTime":66,"msg":"request completed"}
+Apr 12 11:19:40 asdfunnel asdfunnel[16398]: {"level":30,"time":1775992780854,"pid":16398,"hostname":"asdfunnel","req":{"id":5,"method":"GET","url":"/api/series"},"res":{"statusCode":304},"responseTime":46,"msg":"request completed"}
+Apr 12 11:19:47 asdfunnel asdfunnel[16398]: {"level":30,"time":1775992787027,"pid":16398,"hostname":"asdfunnel","req":{"id":6,"method":"POST","url":"/api/storage/uploads/request-url"},"res":{"statusCode":200},"responseTime":5,"msg":"request completed"}
+Apr 12 11:19:51 asdfunnel asdfunnel[16398]: {"level":30,"time":1775992791834,"pid":16398,"hostname":"asdfunnel","req":{"id":7,"method":"PUT","url":"/api/storage/upload-local/objects/uploads/c254d165-c9ba-4395-bee0-d661db1d1920"},"res":{"statusCode":200},"responseTime":39,"msg":"request completed"}
+# ──────────────────────────────────────────────────────────────────────────────
+# Servidor principal: Panel Admin + API
+# Dominio admin: asdfunnel.atreyu.net
+# Todo dominio NO reconocido como autor → panel admin
+# ──────────────────────────────────────────────────────────────────────────────
+server {
+    listen 80 default_server;
+    server_name _;
+
+    client_max_body_size 50M;
+
+    root /var/www/asdfunnel/artifacts/lennox-admin/dist/public;
+    index index.html;
+
+    # API proxy → Node.js backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+
+    # Frontend SPA (panel admin)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache de assets estáticos (30 días)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dominios de autores → Landing pages públicas
+# Cualquier dominio que NO sea el del admin se envía a Node.js,
+# que detecta el dominio del autor via el header Host y sirve la landing.
+# Para añadir un dominio de autor: solo apunta su DNS a esta IP.
+# ──────────────────────────────────────────────────────────────────────────────
+# NOTA: Cuando configures dominios de autores, añade un bloque server aquí:
+#
+# server {
+#     listen 80;
+#     server_name elizabethblack.com www.elizabethblack.com;
+#     client_max_body_size 50M;
+#     location / {
+#         proxy_pass http://127.0.0.1:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }
+#
+# O usa el script: sudo bash /var/www/asdfunnel/add-author-domain.sh elizabethblack.com
+root@asdfunnel:/opt/asdfunnel# 
