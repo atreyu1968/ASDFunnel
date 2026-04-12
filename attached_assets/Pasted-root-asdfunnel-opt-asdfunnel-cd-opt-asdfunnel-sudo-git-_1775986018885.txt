@@ -1,0 +1,64 @@
+root@asdfunnel:/opt/asdfunnel# cd /opt/asdfunnel
+sudo git pull origin main
+export NODE_ENV=development && pnpm install && export NODE_ENV=production && pnpm run build
+remote: Enumerating objects: 16, done.
+remote: Counting objects: 100% (16/16), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 9 (delta 6), reused 9 (delta 6), pack-reused 0 (from 0)
+Unpacking objects: 100% (9/9), 2.16 KiB | 441.00 KiB/s, done.
+From https://github.com/atreyu1968/ASDFunnel
+ * branch            main       -> FETCH_HEAD
+   bb93098..696c108  main       -> origin/main
+Updating bb93098..696c108
+Fast-forward
+ artifacts/api-server/src/routes/public-landing.ts                                                |  2 +-
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775985920217.txt | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 58 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775985920217.txt
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+└─ Done in 29ms
+Done in 3.1s using pnpm v9.15.9
+
+> workspace@0.0.0 build /opt/asdfunnel
+> pnpm run typecheck && pnpm -r --if-present run build
+
+
+> workspace@0.0.0 typecheck /opt/asdfunnel
+> pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck
+
+
+> workspace@0.0.0 typecheck:libs /opt/asdfunnel
+> tsc --build
+
+Scope: 4 of 9 workspace projects
+artifacts/api-server typecheck$ tsc -p tsconfig.json --noEmit
+└─ Done in 21s
+artifacts/lennox-admin typecheck$ tsc -p tsconfig.json --noEmit
+└─ Done in 32.6s
+artifacts/mockup-sandbox typecheck$ tsc -p tsconfig.json --noEmit
+└─ Done in 26.8s
+scripts typecheck$ tsc -p tsconfig.json --noEmit
+└─ Done in 4.8s
+Scope: 8 of 9 workspace projects
+artifacts/mockup-sandbox build$ vite build
+│ failed to load config from /opt/asdfunnel/artifacts/mockup-sandbox/vite.config.ts
+│ error during build:
+│ Error: PORT environment variable is required but was not provided.
+│     at file:///opt/asdfunnel/artifacts/mockup-sandbox/node_modules/.vite-temp/vite.config.ts.timestamp-1775985999053-a39d91fc60f77.mjs:145:9
+│     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+│     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+│     at async loadConfigFromBundledFile (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.…
+│     at async bundleAndLoadConfigFile (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_…
+│     at async loadConfigFromFile (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@…
+│     at async resolveConfig (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2…
+│     at async createBuilder (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2…
+│     at async CAC.<anonymous> (file:///opt/asdfunnel/node_modules/.pnpm/vite@7.3.1_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8…
+└─ Failed in 920ms at /opt/asdfunnel/artifacts/mockup-sandbox
+/opt/asdfunnel/artifacts/mockup-sandbox:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/mockup-sandbox@2.0.0 build: `vite build`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+root@asdfunnel:/opt/asdfunnel# 
