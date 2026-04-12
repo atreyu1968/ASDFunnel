@@ -16,8 +16,9 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
       return;
     }
     const objectPath = await localStorageService.getObjectEntityUploadURL();
-    const port = process.env.PORT || "5000";
-    const baseUrl = process.env.APP_BASE_URL || `http://localhost:${port}`;
+    const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const baseUrl = process.env.APP_BASE_URL || (host ? `${proto}://${host}` : `http://localhost:${process.env.PORT || "5000"}`);
     const uploadURL = `${baseUrl}/api/storage/upload-local${objectPath}`;
     res.json({ uploadURL, objectPath, metadata: { name, size, contentType } });
   } catch (error) {

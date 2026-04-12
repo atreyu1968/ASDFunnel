@@ -16,6 +16,12 @@ import {
 import { ObjectStorageService } from "../lib/objectStorage";
 import mammoth from "mammoth";
 
+function dateToISO(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  if (d instanceof Date) return d.toISOString();
+  return String(d);
+}
+
 const router: IRouter = Router();
 
 router.get("/books", async (req, res): Promise<void> => {
@@ -67,7 +73,7 @@ router.get("/books", async (req, res): Promise<void> => {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(booksTable.createdAt);
 
-  res.json(books.map(b => ({ ...b, publicationDate: b.publicationDate ? String(b.publicationDate) : null, scheduledDate: b.scheduledDate ? String(b.scheduledDate) : null, createdAt: String(b.createdAt) })));
+  res.json(books.map(b => ({ ...b, publicationDate: dateToISO(b.publicationDate), scheduledDate: dateToISO(b.scheduledDate), createdAt: dateToISO(b.createdAt) })));
 });
 
 async function validateFunnelOrder(seriesId: number, funnelRole: string | undefined, status: string | undefined, scheduledDate: string | null | undefined, publicationDate: string | null | undefined, excludeBookId?: number): Promise<string | null> {
@@ -97,7 +103,7 @@ async function validateFunnelOrder(seriesId: number, funnelRole: string | undefi
       return "El lead magnet debe estar publicado antes de publicar/programar el libro de entrada.";
     }
     const lmDate = leadMagnet.publicationDate || leadMagnet.scheduledDate;
-    if (effectiveDate && lmDate && new Date(effectiveDate) <= new Date(String(lmDate))) {
+    if (effectiveDate && lmDate && new Date(effectiveDate) <= new Date(lmDate instanceof Date ? lmDate.toISOString() : String(lmDate))) {
       return "La fecha del libro de entrada debe ser posterior a la fecha de publicación del lead magnet.";
     }
   }
@@ -109,7 +115,7 @@ async function validateFunnelOrder(seriesId: number, funnelRole: string | undefi
       if (!teDate) {
         return "El libro de entrada debe tener fecha antes de programar ofertas principales.";
       }
-      if (effectiveDate && new Date(effectiveDate) <= new Date(String(teDate))) {
+      if (effectiveDate && new Date(effectiveDate) <= new Date(teDate instanceof Date ? teDate.toISOString() : String(teDate))) {
         return "La fecha de la oferta principal debe ser posterior a la fecha del libro de entrada.";
       }
     }
@@ -133,8 +139,8 @@ router.post("/books", async (req, res): Promise<void> => {
     parsed.data.seriesId,
     parsed.data.funnelRole,
     parsed.data.status,
-    parsed.data.scheduledDate ? String(parsed.data.scheduledDate) : parsed.data.scheduledDate as string | null | undefined,
-    parsed.data.publicationDate ? String(parsed.data.publicationDate) : parsed.data.publicationDate as string | null | undefined
+    dateToISO(parsed.data.scheduledDate),
+    dateToISO(parsed.data.publicationDate)
   );
   if (funnelError) {
     res.status(400).json({ error: funnelError });
@@ -156,9 +162,9 @@ router.post("/books", async (req, res): Promise<void> => {
 
   res.status(201).json({
     ...book,
-    publicationDate: book.publicationDate ? String(book.publicationDate) : null,
-    scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null,
-    createdAt: String(book.createdAt),
+    publicationDate: dateToISO(book.publicationDate),
+    scheduledDate: dateToISO(book.scheduledDate),
+    createdAt: dateToISO(book.createdAt),
     seriesName: seriesInfo?.seriesName ?? "",
     authorPenName: seriesInfo?.authorPenName ?? "",
   });
@@ -211,7 +217,7 @@ router.get("/books/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json({ ...book, publicationDate: book.publicationDate ? String(book.publicationDate) : null, scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null, createdAt: String(book.createdAt) });
+  res.json({ ...book, publicationDate: dateToISO(book.publicationDate), scheduledDate: dateToISO(book.scheduledDate), createdAt: dateToISO(book.createdAt) });
 });
 
 router.put("/books/:id", async (req, res): Promise<void> => {
@@ -241,8 +247,8 @@ router.put("/books/:id", async (req, res): Promise<void> => {
     oldBook.seriesId,
     mergedFunnelRole ?? undefined,
     mergedStatus ?? undefined,
-    mergedScheduledDate ? String(mergedScheduledDate) : null,
-    mergedPublicationDate ? String(mergedPublicationDate) : null,
+    dateToISO(mergedScheduledDate),
+    dateToISO(mergedPublicationDate),
     params.data.id
   );
   if (funnelError) {
@@ -271,9 +277,9 @@ router.put("/books/:id", async (req, res): Promise<void> => {
 
   res.json({
     ...book,
-    publicationDate: book.publicationDate ? String(book.publicationDate) : null,
-    scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null,
-    createdAt: String(book.createdAt),
+    publicationDate: dateToISO(book.publicationDate),
+    scheduledDate: dateToISO(book.scheduledDate),
+    createdAt: dateToISO(book.createdAt),
     seriesName: seriesInfo?.seriesName ?? "",
     authorPenName: seriesInfo?.authorPenName ?? "",
   });
