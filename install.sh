@@ -362,6 +362,10 @@ print_step "7/8 Compilando aplicación (esto puede tardar unos minutos)"
 
 cd "$APP_DIR"
 
+print_status "Ajustando permisos del directorio de la aplicación..."
+chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
+print_success "Permisos ajustados"
+
 export PORT=$APP_PORT
 export BASE_PATH="/"
 export DATABASE_URL="$DATABASE_URL"
