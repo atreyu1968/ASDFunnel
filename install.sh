@@ -383,7 +383,7 @@ sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm --fil
 print_success "Backend compilado"
 
 print_status "Sincronizando esquema de base de datos (Drizzle ORM)..."
-sudo -u "$APP_USER" -E env HOME="/home/$APP_USER" DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push 2>&1 | tail -5
+sudo -u "$APP_USER" -E env HOME="/home/$APP_USER" DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push-force 2>&1 | tail -5
 print_success "Esquema de base de datos sincronizado"
 
 print_success "Aplicación compilada correctamente"
