@@ -16,10 +16,12 @@ import {
 import { ObjectStorageService } from "../lib/objectStorage";
 import mammoth from "mammoth";
 
-function dateToISO(d: Date | string | null | undefined): string | null {
+function dateToISO(d: unknown): string | null {
   if (!d) return null;
   if (d instanceof Date) return d.toISOString();
-  return String(d);
+  const parsed = new Date(String(d));
+  if (isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
 }
 
 const router: IRouter = Router();
