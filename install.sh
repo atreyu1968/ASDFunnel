@@ -367,7 +367,7 @@ export BASE_PATH="/"
 export DATABASE_URL="$DATABASE_URL"
 
 print_status "Instalando dependencias Node.js (pnpm install)..."
-sudo -u "$APP_USER" -E env NODE_ENV=development HOME="/home/$APP_USER" pnpm install --frozen-lockfile 2>&1 | tail -5
+sudo -u "$APP_USER" -E env NODE_ENV=development HOME="/home/$APP_USER" pnpm install --no-frozen-lockfile 2>&1 | tail -5
 print_success "Dependencias instaladas"
 
 print_status "Compilando typecheck de librerías compartidas..."

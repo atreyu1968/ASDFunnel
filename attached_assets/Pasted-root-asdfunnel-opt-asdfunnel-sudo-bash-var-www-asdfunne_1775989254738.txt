@@ -1,0 +1,52 @@
+root@asdfunnel:/opt/asdfunnel# sudo bash /var/www/asdfunnel/install.sh
+
+
+    ╔═══════════════════════════════════════════════╗
+    ║           ASD FUNNEL - INSTALADOR             ║
+    ║        Atreyu Servicios Digitales              ║
+    ║     Panel de Gestión Editorial Digital         ║
+    ╚═══════════════════════════════════════════════╝
+
+[INFO] Ubuntu 25.04 detectado
+[AVISO] Instalación existente detectada. Se actualizará preservando la configuración.
+
+━━━ 1/8 Actualizando sistema e instalando paquetes base ━━━
+[INFO] Actualizando lista de paquetes...
+[INFO] Instalando paquetes esenciales...
+nginx was already set to manually installed.
+postgresql was already set to manually installed.
+[OK] Paquetes base instalados: curl, git, nginx, postgresql, build-essential
+
+━━━ 2/8 Instalando Node.js 20 y pnpm ━━━
+[INFO] Node.js v20.20.2 ya instalado, omitiendo
+[INFO] Instalando/actualizando pnpm...
+1 package is looking for funding
+  run `npm fund` for details
+[OK] Node.js v20.20.2 + pnpm 9.15.9 instalados
+
+━━━ 3/8 Configurando PostgreSQL ━━━
+[INFO] Usando credenciales de base de datos existentes
+[INFO] Verificando conexión a PostgreSQL...
+[OK] Conexión a PostgreSQL verificada
+
+━━━ 4/8 Configurando usuario del sistema ━━━
+[INFO] Usuario 'asdfunnel' ya existe
+
+━━━ 5/8 Descargando código fuente ━━━
+[INFO] Repositorio existente detectado. Actualizando...
+From https://github.com/atreyu1968/ASDFunnel
+   9dc9f93..ce84816  main       -> origin/main
+HEAD is now at ce84816 Add protected download feature for lead magnet books
+[OK] Código actualizado desde GitHub
+
+━━━ 6/8 Guardando configuración ━━━
+[INFO] Configuración existente preservada y actualizada
+[OK] Configuración guardada en /etc/asdfunnel/env
+
+━━━ 7/8 Compilando aplicación (esto puede tardar unos minutos) ━━━
+[INFO] Instalando dependencias Node.js (pnpm install)...
+Scope: all 9 workspace projects
+ ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't match the value found in the lockfile
+
+Update your lockfile using "pnpm install --no-frozen-lockfile"
+root@asdfunnel:/opt/asdfunnel# 
