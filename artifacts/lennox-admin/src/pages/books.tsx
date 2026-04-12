@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check, ExternalLink, SpellCheck } from "lucide-react";
+import { Plus, Edit2, Trash2, Filter, ImagePlus, FileText, Loader2, Upload, Brain, BookOpen, Copy, Check, ExternalLink, SpellCheck, Download, X } from "lucide-react";
 import { aiGenerateKdp } from "@/lib/ai-api";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ProofreadDialog } from "@/components/proofread-dialog";
@@ -126,6 +126,8 @@ export default function Books() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [proofreadOpen, setProofreadOpen] = useState(false);
   const [proofreadBookId, setProofreadBookId] = useState<number | null>(null);
+  const [downloadDialogBookId, setDownloadDialogBookId] = useState<number | null>(null);
+  const [uploadingDownload, setUploadingDownload] = useState<string | null>(null);
   
   const [filterSeries, setFilterSeries] = useState<number | "all">("all");
   const [filterStatus, setFilterStatus] = useState<string | "all">("all");
@@ -320,6 +322,46 @@ export default function Books() {
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
   };
+
+  const handleDownloadFileUpload = async (bookId: number, format: string, file: File) => {
+    setUploadingDownload(format);
+    try {
+      const { objectPath } = await uploadFileToStorage(file);
+      const storagePath = `${API_BASE}api/storage${objectPath}`;
+      const res = await fetch(`${API_BASE}api/books/${bookId}/upload-download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ format, objectPath: storagePath }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al subir archivo");
+      }
+      queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+      toast({ title: `Archivo ${format.toUpperCase()} subido correctamente` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setUploadingDownload(null);
+    }
+  };
+
+  const handleDownloadFileDelete = async (bookId: number, format: string) => {
+    try {
+      const res = await fetch(`${API_BASE}api/books/${bookId}/download/${format}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Error al eliminar");
+      queryClient.invalidateQueries({ queryKey: getListBooksQueryKey() });
+      toast({ title: `Archivo ${format.toUpperCase()} eliminado` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const downloadDialogBook = books?.find(b => b.id === downloadDialogBookId);
 
   const handleProofreadOpen = (bookId: number) => {
     setProofreadBookId(bookId);
@@ -703,6 +745,12 @@ export default function Books() {
                           <FileText className="h-3 w-3" /> Manuscrito
                         </div>
                       )}
+                      {(book.downloadEpubPath || book.downloadPdfPath || book.downloadAzw3Path) && (
+                        <div className="text-xs text-blue-500 mt-0.5 flex items-center gap-1">
+                          <Download className="h-3 w-3" />
+                          {[book.downloadEpubPath && "EPUB", book.downloadPdfPath && "PDF", book.downloadAzw3Path && "AZW3"].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <div className="text-foreground">{book.seriesName}</div>
@@ -757,6 +805,9 @@ export default function Books() {
                             </Button>
                           </a>
                         )}
+                        <Button variant="ghost" size="icon" onClick={() => setDownloadDialogBookId(book.id)} title="Gestionar archivos de descarga (Lead Magnet)" className="text-muted-foreground hover:text-blue-500">
+                          <Download className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(book)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -856,6 +907,78 @@ export default function Books() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!downloadDialogBookId} onOpenChange={(open) => { if (!open) setDownloadDialogBookId(null); }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-blue-500" /> Archivos de Descarga (Lead Magnet)
+            </DialogTitle>
+            <DialogDescription>
+              {downloadDialogBook?.title} — Sube archivos EPUB, PDF o AZW3 que los suscriptores podrán descargar tras confirmar su email. Los enlaces expiran en 24 horas.
+            </DialogDescription>
+          </DialogHeader>
+          {downloadDialogBook && (
+            <div className="space-y-4">
+              {(["epub", "pdf", "azw3"] as const).map((fmt) => {
+                const fieldMap = { epub: "downloadEpubPath", pdf: "downloadPdfPath", azw3: "downloadAzw3Path" } as const;
+                const hasFile = !!(downloadDialogBook as any)[fieldMap[fmt]];
+                const acceptMap = { epub: ".epub", pdf: ".pdf", azw3: ".azw3" };
+                return (
+                  <div key={fmt} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${hasFile ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"}`}>
+                        {fmt.toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">{fmt.toUpperCase()}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {hasFile ? "Archivo subido" : "Sin archivo"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hasFile && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDownloadFileDelete(downloadDialogBook.id, fmt)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <label className="inline-flex">
+                        <Button variant={hasFile ? "outline" : "default"} size="sm" asChild disabled={uploadingDownload === fmt}>
+                          <span className="cursor-pointer">
+                            {uploadingDownload === fmt ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-1" />
+                            )}
+                            {hasFile ? "Reemplazar" : "Subir"}
+                          </span>
+                        </Button>
+                        <input
+                          type="file"
+                          accept={acceptMap[fmt]}
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleDownloadFileUpload(downloadDialogBook.id, fmt, f);
+                            e.target.value = "";
+                          }}
+                          disabled={uploadingDownload === fmt}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </DialogContent>

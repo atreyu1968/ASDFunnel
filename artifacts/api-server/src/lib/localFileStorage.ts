@@ -97,6 +97,9 @@ export class LocalFileStorageService {
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
         ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
         ".pdf": "application/pdf",
+        ".epub": "application/epub+zip",
+        ".azw3": "application/vnd.amazon.ebook",
+        ".mobi": "application/x-mobipocket-ebook",
         ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       };
       contentType = mimeMap[ext] || contentType;

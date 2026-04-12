@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, subscribersTable, mailingListsTable, emailTemplatesTable } from "@workspace/db";
+import { db, subscribersTable, mailingListsTable, emailTemplatesTable, booksTable } from "@workspace/db";
 import { isEmailConfigured, sendTemplateEmail } from "../lib/email-service";
+import { generateDownloadUrl } from "./downloads";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -39,6 +40,31 @@ router.get("/confirm/:token", async (req, res): Promise<void> => {
     })
     .where(eq(subscribersTable.id, subscriber.id));
 
+  const downloadLinks: { format: string; url: string }[] = [];
+  const [mailingList] = await db
+    .select({ leadMagnetBookId: mailingListsTable.leadMagnetBookId })
+    .from(mailingListsTable)
+    .where(eq(mailingListsTable.id, subscriber.mailingListId));
+
+  if (mailingList?.leadMagnetBookId) {
+    const [book] = await db
+      .select({
+        id: booksTable.id,
+        title: booksTable.title,
+        downloadEpubPath: booksTable.downloadEpubPath,
+        downloadPdfPath: booksTable.downloadPdfPath,
+        downloadAzw3Path: booksTable.downloadAzw3Path,
+      })
+      .from(booksTable)
+      .where(eq(booksTable.id, mailingList.leadMagnetBookId));
+
+    if (book) {
+      if (book.downloadEpubPath) downloadLinks.push({ format: "epub", url: generateDownloadUrl(book.id, "epub") });
+      if (book.downloadPdfPath) downloadLinks.push({ format: "pdf", url: generateDownloadUrl(book.id, "pdf") });
+      if (book.downloadAzw3Path) downloadLinks.push({ format: "azw3", url: generateDownloadUrl(book.id, "azw3") });
+    }
+  }
+
   const { automationRulesTable, automationLogsTable } = await import("@workspace/db");
   const rules = await db
     .select()
@@ -66,12 +92,20 @@ router.get("/confirm/:token", async (req, res): Promise<void> => {
       } else if ((rule.actionType === "send_email" || rule.actionType === "welcome_sequence" || rule.actionType === "send_lead_magnet") && rule.emailTemplateId) {
         const emailReady = await isEmailConfigured();
         if (emailReady) {
-          const result = await sendTemplateEmail(rule.emailTemplateId, subscriber.email, {
+          const templateVars: Record<string, string> = {
             email: subscriber.email,
             subscriber_email: subscriber.email,
             confirmation_url: "",
             unsubscribe_url: `{{unsubscribe_url}}`,
-          });
+          };
+          if (rule.actionType === "send_lead_magnet" && downloadLinks.length > 0) {
+            const dlHtml = downloadLinks.map(dl =>
+              `<a href="${dl.url}" style="display:inline-block;margin:5px 10px 5px 0;padding:10px 20px;background-color:#d4a017;color:#0f172a;text-decoration:none;border-radius:6px;font-weight:bold;">Descargar ${dl.format.toUpperCase()}</a>`
+            ).join("\n");
+            templateVars.download_links = dlHtml;
+            templateVars.download_url = downloadLinks[0].url;
+          }
+          const result = await sendTemplateEmail(rule.emailTemplateId, subscriber.email, templateVars);
           actionDetail = result.success
             ? `Email enviado a ${subscriber.email} (template #${rule.emailTemplateId})`
             : `Error enviando email: ${result.error}`;
@@ -99,7 +133,12 @@ router.get("/confirm/:token", async (req, res): Promise<void> => {
     }
   }
 
-  res.json({ success: true, message: "Email confirmado exitosamente. ¡Bienvenido!", alreadyConfirmed: false });
+  res.json({
+    success: true,
+    message: "Email confirmado exitosamente. ¡Bienvenido!",
+    alreadyConfirmed: false,
+    downloadLinks: downloadLinks.length > 0 ? downloadLinks : undefined,
+  });
 });
 
 router.get("/unsubscribe/:token", async (req, res): Promise<void> => {

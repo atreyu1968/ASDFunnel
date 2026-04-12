@@ -25,6 +25,9 @@ export const booksTable = pgTable("books", {
   books2readUrl: text("books2read_url"),
   coverImageUrl: text("cover_image_url"),
   manuscriptPath: text("manuscript_path"),
+  downloadEpubPath: text("download_epub_path"),
+  downloadPdfPath: text("download_pdf_path"),
+  downloadAzw3Path: text("download_azw3_path"),
   crossoverToSeriesId: integer("crossover_to_series_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

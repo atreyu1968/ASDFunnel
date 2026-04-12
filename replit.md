@@ -29,7 +29,7 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 ### Database Schema (PostgreSQL)
 - **authors**: Pen names, bios, brand descriptions, genre focus
 - **series**: Book series linked to authors, with status tracking
-- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling, cover image URLs (GCS), manuscript paths, Books2Read universal link (`books2read_url`)
+- **books**: Individual titles with funnel roles (lead_magnet, traffic_entry, core_offer, crossover_bridge), pricing strategies, publication scheduling, cover image URLs (GCS), manuscript paths, Books2Read universal link (`books2read_url`), download files (EPUB/PDF/AZW3) for lead magnet delivery
 - **mailing_lists**: Email lists separated by author AND language, with lead magnet book links
 - **subscribers**: Email subscribers with source tracking (lead_magnet, landing_page, manual, import), status management
 - **activity**: Audit log of book-related actions
@@ -72,6 +72,17 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 - **Orthotypographic Proofreader** (`POST /api/ai/proofread`): Forensic editorial auditor with 14-phase detection protocol. Processes text in ~6000-char blocks. Group A (critical): dialogue overlaps, mid-sentence cuts, action loops, cloned paragraphs, perspective shifts, temporal breaks, ghost characters. Group B (medium): AI clichés/stock phrases, emotional over-explanation, artificial transitions, info-dump dialogue. Group C (editorial): RAE orthotypography, literary dialogue format, lexical coherence. Returns correctedText + typed glitches array + stats (qualityScore capped at 7 for AI text with no findings). Works with .docx manuscripts or pasted text.
 - All AI routes include series context (previous books) for character/plot consistency
 - All AI routes have strict input validation (type checking, enum validation, bounds checking)
+
+### Protected Downloads (Lead Magnet Delivery)
+- Upload EPUB/PDF/AZW3 files per book via admin panel (Download button in book table)
+- Files stored via local storage (production) or GCS (Replit)
+- Download links generated with HMAC-SHA256 signed tokens (24-hour expiry)
+- Token format: base64url(`bookId:format:expires:hmac_signature`)
+- Public endpoint: `GET /api/public/download/:token` (no auth required, pre-auth middleware)
+- On email confirmation: download links included in JSON response (`downloadLinks` array)
+- Automation: `send_lead_magnet` actions include `{{download_links}}` (HTML buttons) and `{{download_url}}` (first format URL) template variables
+- Download files: `download_epub_path`, `download_pdf_path`, `download_azw3_path` columns in books table
+- Routes: `POST /api/books/:id/upload-download` (set file), `DELETE /api/books/:id/download/:format` (remove file)
 
 ### Sales Funnel Stages
 1. Lead Magnet (free precuela for email capture)

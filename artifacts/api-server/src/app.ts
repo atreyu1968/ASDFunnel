@@ -6,6 +6,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import authRouter from "./routes/auth";
 import publicLandingRouter from "./routes/public-landing";
+import downloadRouter from "./routes/downloads";
 import { requireAuth } from "./middleware/auth";
 import { logger } from "./lib/logger";
 
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", authRouter);
+app.use("/api", downloadRouter);
 
 app.use(requireAuth);
 

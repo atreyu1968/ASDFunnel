@@ -53,6 +53,9 @@ router.get("/books", async (req, res): Promise<void> => {
       isbn: booksTable.isbn,
       coverImageUrl: booksTable.coverImageUrl,
       manuscriptPath: booksTable.manuscriptPath,
+      downloadEpubPath: booksTable.downloadEpubPath,
+      downloadPdfPath: booksTable.downloadPdfPath,
+      downloadAzw3Path: booksTable.downloadAzw3Path,
       crossoverToSeriesId: booksTable.crossoverToSeriesId,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
@@ -64,7 +67,7 @@ router.get("/books", async (req, res): Promise<void> => {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(booksTable.createdAt);
 
-  res.json(ListBooksResponse.parse(books));
+  res.json(books.map(b => ({ ...b, publicationDate: b.publicationDate ? String(b.publicationDate) : null, scheduledDate: b.scheduledDate ? String(b.scheduledDate) : null, createdAt: String(b.createdAt) })));
 });
 
 async function validateFunnelOrder(seriesId: number, funnelRole: string | undefined, status: string | undefined, scheduledDate: string | null | undefined, publicationDate: string | null | undefined, excludeBookId?: number): Promise<string | null> {
@@ -187,6 +190,9 @@ router.get("/books/:id", async (req, res): Promise<void> => {
       isbn: booksTable.isbn,
       coverImageUrl: booksTable.coverImageUrl,
       manuscriptPath: booksTable.manuscriptPath,
+      downloadEpubPath: booksTable.downloadEpubPath,
+      downloadPdfPath: booksTable.downloadPdfPath,
+      downloadAzw3Path: booksTable.downloadAzw3Path,
       crossoverToSeriesId: booksTable.crossoverToSeriesId,
       seriesName: seriesTable.name,
       authorPenName: authorsTable.penName,
@@ -202,7 +208,7 @@ router.get("/books/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(ListBooksResponseItem.parse(book));
+  res.json({ ...book, publicationDate: book.publicationDate ? String(book.publicationDate) : null, scheduledDate: book.scheduledDate ? String(book.scheduledDate) : null, createdAt: String(book.createdAt) });
 });
 
 router.put("/books/:id", async (req, res): Promise<void> => {
@@ -381,6 +387,59 @@ Responde SOLO con el JSON, sin markdown ni explicaciones.`;
     req.log.error({ err: error }, "Error processing manuscript");
     res.status(500).json({ error: "Error procesando manuscrito" });
   }
+});
+
+const VALID_DOWNLOAD_FORMATS = ["epub", "pdf", "azw3"] as const;
+const FORMAT_TO_FIELD: Record<string, "downloadEpubPath" | "downloadPdfPath" | "downloadAzw3Path"> = {
+  epub: "downloadEpubPath",
+  pdf: "downloadPdfPath",
+  azw3: "downloadAzw3Path",
+};
+
+router.post("/books/:id/upload-download", async (req, res): Promise<void> => {
+  const bookId = Number(req.params.id);
+  if (isNaN(bookId)) {
+    res.status(400).json({ error: "Invalid book ID" });
+    return;
+  }
+
+  const { format, objectPath } = req.body;
+  if (!format || !VALID_DOWNLOAD_FORMATS.includes(format)) {
+    res.status(400).json({ error: "Formato inválido. Usa: epub, pdf, azw3" });
+    return;
+  }
+  if (!objectPath || typeof objectPath !== "string") {
+    res.status(400).json({ error: "objectPath requerido" });
+    return;
+  }
+  if (!objectPath.match(/^(\/api\/storage)?\/objects\//) && !objectPath.startsWith("/objects/")) {
+    res.status(400).json({ error: "objectPath inválido — debe ser una ruta de almacenamiento interna" });
+    return;
+  }
+
+  const [existing] = await db.select().from(booksTable).where(eq(booksTable.id, bookId));
+  if (!existing) {
+    res.status(404).json({ error: "Book not found" });
+    return;
+  }
+
+  const field = FORMAT_TO_FIELD[format];
+  await db.update(booksTable).set({ [field]: objectPath }).where(eq(booksTable.id, bookId));
+
+  res.json({ success: true, bookId, format, objectPath });
+});
+
+router.delete("/books/:id/download/:format", async (req, res): Promise<void> => {
+  const bookId = Number(req.params.id);
+  const format = String(req.params.format);
+  if (isNaN(bookId) || !VALID_DOWNLOAD_FORMATS.includes(format as any)) {
+    res.status(400).json({ error: "Parámetros inválidos" });
+    return;
+  }
+
+  const field = FORMAT_TO_FIELD[format];
+  await db.update(booksTable).set({ [field]: null }).where(eq(booksTable.id, bookId));
+  res.json({ success: true });
 });
 
 router.delete("/books/:id", async (req, res): Promise<void> => {
