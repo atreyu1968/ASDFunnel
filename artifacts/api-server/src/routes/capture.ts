@@ -8,10 +8,11 @@ import {
 } from "@workspace/api-zod";
 import { isEmailConfigured, sendTemplateEmail } from "../lib/email-service";
 import { generateToken } from "./confirmation";
+import { getBaseUrl } from "../lib/baseUrl";
 
 const router: IRouter = Router();
 
-async function sendConfirmationEmail(subscriberId: number, email: string, language: string, token: string, mailingListId: number): Promise<void> {
+async function sendConfirmationEmail(subscriberId: number, email: string, language: string, token: string, mailingListId: number, baseUrl: string): Promise<void> {
   const emailReady = await isEmailConfigured();
   if (!emailReady) return;
 
@@ -25,9 +26,6 @@ async function sendConfirmationEmail(subscriberId: number, email: string, langua
     ));
 
   if (confirmTemplate) {
-    const baseUrl = process.env.APP_BASE_URL
-      || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : `http://localhost:${process.env.PORT || 5000}`);
-
     await sendTemplateEmail(confirmTemplate.id, email, {
       email,
       subscriber_email: email,
@@ -81,7 +79,7 @@ router.post("/capture", async (req, res): Promise<void> => {
     confirmationToken: token,
   }).returning();
 
-  await sendConfirmationEmail(subscriber.id, parsed.data.email, parsed.data.language, token, parsed.data.mailingListId);
+  await sendConfirmationEmail(subscriber.id, parsed.data.email, parsed.data.language, token, parsed.data.mailingListId, getBaseUrl(req));
 
   res.json({
     success: true,
@@ -146,7 +144,7 @@ router.post("/capture/by-landing-page/:landingPageId", async (req, res): Promise
     confirmationToken: token,
   }).returning();
 
-  await sendConfirmationEmail(subscriber.id, parsed.data.email, landingPage.language, token, landingPage.mailingListId);
+  await sendConfirmationEmail(subscriber.id, parsed.data.email, landingPage.language, token, landingPage.mailingListId, getBaseUrl(req));
 
   res.json({
     success: true,

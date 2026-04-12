@@ -20,10 +20,10 @@ export function generateDownloadToken(bookId: number, format: string): string {
   return token;
 }
 
-export function generateDownloadUrl(bookId: number, format: string): string {
+export function generateDownloadUrl(bookId: number, format: string, baseUrl?: string): string {
   const token = generateDownloadToken(bookId, format);
-  const baseUrl = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-  return `${baseUrl}/api/public/download/${token}`;
+  const base = baseUrl || process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+  return `${base}/api/public/download/${token}`;
 }
 
 function verifyDownloadToken(token: string): { bookId: number; format: string } | null {

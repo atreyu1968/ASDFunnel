@@ -3,6 +3,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db, subscribersTable, mailingListsTable, emailTemplatesTable, booksTable } from "@workspace/db";
 import { isEmailConfigured, sendTemplateEmail } from "../lib/email-service";
 import { generateDownloadUrl } from "./downloads";
+import { getBaseUrl } from "../lib/baseUrl";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -59,9 +60,10 @@ router.get("/confirm/:token", async (req, res): Promise<void> => {
       .where(eq(booksTable.id, mailingList.leadMagnetBookId));
 
     if (book) {
-      if (book.downloadEpubPath) downloadLinks.push({ format: "epub", url: generateDownloadUrl(book.id, "epub") });
-      if (book.downloadPdfPath) downloadLinks.push({ format: "pdf", url: generateDownloadUrl(book.id, "pdf") });
-      if (book.downloadAzw3Path) downloadLinks.push({ format: "azw3", url: generateDownloadUrl(book.id, "azw3") });
+      const baseUrl = getBaseUrl(req);
+      if (book.downloadEpubPath) downloadLinks.push({ format: "epub", url: generateDownloadUrl(book.id, "epub", baseUrl) });
+      if (book.downloadPdfPath) downloadLinks.push({ format: "pdf", url: generateDownloadUrl(book.id, "pdf", baseUrl) });
+      if (book.downloadAzw3Path) downloadLinks.push({ format: "azw3", url: generateDownloadUrl(book.id, "azw3", baseUrl) });
     }
   }
 

@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { LocalFileStorageService, ObjectNotFoundError } from "../lib/localFileStorage";
+import { getBaseUrl } from "../lib/baseUrl";
 
 const router: IRouter = Router();
 const localStorageService = new LocalFileStorageService();
@@ -16,9 +17,7 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
       return;
     }
     const objectPath = await localStorageService.getObjectEntityUploadURL();
-    const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
-    const host = req.headers["x-forwarded-host"] || req.headers.host;
-    const baseUrl = process.env.APP_BASE_URL || (host ? `${proto}://${host}` : `http://localhost:${process.env.PORT || "5000"}`);
+    const baseUrl = getBaseUrl(req);
     const uploadURL = `${baseUrl}/api/storage/upload-local${objectPath}`;
     res.json({ uploadURL, objectPath, metadata: { name, size, contentType } });
   } catch (error) {
