@@ -377,17 +377,17 @@ router.get("/api/public/landing-pages/by-domain", async (req: Request, res: Resp
   res.json({ author: { id: author.id, penName: author.penName, domain: author.domain }, pages });
 });
 
-router.get("/:lang/:slug", async (req: Request, res: Response): Promise<void> => {
+router.get("/:lang/:slug", async (req: Request, res: Response, next: Function): Promise<void> => {
   const lang = String(req.params.lang);
   const slug = String(req.params.slug);
-  if (!lang || !slug) { res.status(404).send(render404("es")); return; }
-  if (!/^[a-z]{2}$/.test(lang)) { res.status(404).send(render404("es")); return; }
+  if (!lang || !slug) { next(); return; }
+  if (!/^[a-z]{2}$/.test(lang)) { next(); return; }
 
   const host = (req.hostname || String(req.headers.host || "")).replace(/:\d+$/, "").toLowerCase();
 
   const adminDomain = (process.env.ADMIN_DOMAIN || "").toLowerCase().replace(/^www\./, "");
   if (adminDomain && host.replace(/^www\./, "") === adminDomain) {
-    (res as any).skipToNext = true;
+    next();
     return;
   }
 

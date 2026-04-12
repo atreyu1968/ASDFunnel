@@ -448,7 +448,75 @@ print_success "Servicio systemd '$APP_NAME' configurado"
 
 print_status "Configurando Nginx como proxy reverso multi-dominio..."
 
+if [ -n "$ADMIN_DOMAIN" ]; then
 cat > "/etc/nginx/sites-available/$APP_NAME" << NGINX
+# ── Bloque ADMIN: solo el dominio del panel ──────────────────────
+server {
+    listen 80;
+    server_name ${ADMIN_DOMAIN} www.${ADMIN_DOMAIN};
+
+    client_max_body_size 50M;
+
+    root $FRONTEND_DIR;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_read_timeout 120s;
+        proxy_cache off;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        expires -1;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)\$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+
+# ── Bloque CATCH-ALL: dominios de autores → Node.js ─────────────
+# Cualquier dominio que NO sea el admin se envía a Node.js
+# para que sirva la landing page del autor correspondiente.
+# No necesitas add-author-domain.sh si usas esta configuración.
+server {
+    listen 80 default_server;
+    server_name _;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_read_timeout 120s;
+    }
+}
+NGINX
+else
+cat > "/etc/nginx/sites-available/$APP_NAME" << NGINX
+# ── Sin ADMIN_DOMAIN: todo pasa por Node.js ──────────────────────
+# Node.js decide si mostrar landing page o panel admin según el Host.
 server {
     listen 80 default_server;
     server_name _;
@@ -481,29 +549,13 @@ server {
         expires -1;
     }
 
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)\$ {
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
 }
-
-# Para añadir un dominio de autor:
-#   sudo bash $APP_DIR/add-author-domain.sh elizabethblack.com
-#
-# server {
-#     listen 80;
-#     server_name elizabethblack.com www.elizabethblack.com;
-#     client_max_body_size 50M;
-#     location / {
-#         proxy_pass http://127.0.0.1:$APP_PORT;
-#         proxy_http_version 1.1;
-#         proxy_set_header Host \$host;
-#         proxy_set_header X-Real-IP \$remote_addr;
-#         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-#         proxy_set_header X-Forwarded-Proto \$scheme;
-#     }
-# }
 NGINX
+fi
 
 ln -sf "/etc/nginx/sites-available/$APP_NAME" /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
