@@ -94,7 +94,7 @@ async function validateFunnelOrder(seriesId: number, funnelRole: string | undefi
       return "El lead magnet debe estar publicado antes de publicar/programar el libro de entrada.";
     }
     const lmDate = leadMagnet.publicationDate || leadMagnet.scheduledDate;
-    if (effectiveDate && lmDate && new Date(effectiveDate) <= new Date(lmDate as string)) {
+    if (effectiveDate && lmDate && new Date(effectiveDate) <= new Date(String(lmDate))) {
       return "La fecha del libro de entrada debe ser posterior a la fecha de publicación del lead magnet.";
     }
   }
@@ -106,7 +106,7 @@ async function validateFunnelOrder(seriesId: number, funnelRole: string | undefi
       if (!teDate) {
         return "El libro de entrada debe tener fecha antes de programar ofertas principales.";
       }
-      if (effectiveDate && new Date(effectiveDate) <= new Date(teDate as string)) {
+      if (effectiveDate && new Date(effectiveDate) <= new Date(String(teDate))) {
         return "La fecha de la oferta principal debe ser posterior a la fecha del libro de entrada.";
       }
     }
@@ -130,8 +130,8 @@ router.post("/books", async (req, res): Promise<void> => {
     parsed.data.seriesId,
     parsed.data.funnelRole,
     parsed.data.status,
-    parsed.data.scheduledDate,
-    parsed.data.publicationDate
+    parsed.data.scheduledDate ? String(parsed.data.scheduledDate) : parsed.data.scheduledDate as string | null | undefined,
+    parsed.data.publicationDate ? String(parsed.data.publicationDate) : parsed.data.publicationDate as string | null | undefined
   );
   if (funnelError) {
     res.status(400).json({ error: funnelError });
