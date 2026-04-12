@@ -5,6 +5,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+function toDateInputValue(v: string | null | undefined): string {
+  if (!v) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return v.split("T")[0];
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 import {
   useListBooks,
   getListBooksQueryKey,
@@ -245,8 +257,8 @@ export default function Books() {
       price: book.price,
       promotionalPrice: book.promotionalPrice,
       status: book.status,
-      publicationDate: book.publicationDate ? book.publicationDate.split('T')[0] : "",
-      scheduledDate: book.scheduledDate ? book.scheduledDate.split('T')[0] : "",
+      publicationDate: toDateInputValue(book.publicationDate),
+      scheduledDate: toDateInputValue(book.scheduledDate),
       distributionChannel: book.distributionChannel || "wide",
       asin: book.asin || "",
       isbn: book.isbn || "",
