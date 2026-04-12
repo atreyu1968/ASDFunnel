@@ -1,0 +1,47 @@
+root@asdfunnel:/opt/asdfunnel# cd /opt/asdfunnel
+git pull origin main
+export $(grep -v '^#' /etc/asdfunnel/env | xargs)
+sudo -u asdfunnel -E env NODE_ENV=development HOME="/home/asdfunnel" pnpm install --no-frozen-lockfile
+sudo -u asdfunnel -E env HOME="/home/asdfunnel" DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push-force
+sudo systemctl restart asdfunnel
+remote: Enumerating objects: 79, done.
+remote: Counting objects: 100% (79/79), done.
+remote: Compressing objects: 100% (21/21), done.
+remote: Total 49 (delta 35), reused 42 (delta 28), pack-reused 0 (from 0)
+Unpacking objects: 100% (49/49), 17.22 KiB | 226.00 KiB/s, done.
+From https://github.com/atreyu1968/ASDFunnel
+ * branch            main       -> FETCH_HEAD
+   4ae3fc6..9b372e9  main       -> origin/main
+Updating 4ae3fc6..9b372e9
+Fast-forward
+ README.md                                                                                        | 250 +++++++++++++++++++++++++++++++--------------------
+ artifacts/api-server/src/app.ts                                                                  |   2 +
+ artifacts/api-server/src/lib/localFileStorage.ts                                                 |   3 +
+ artifacts/api-server/src/routes/books.ts                                                         |  63 ++++++++++++-
+ artifacts/api-server/src/routes/confirmation.ts                                                  |  47 +++++++++-
+ artifacts/api-server/src/routes/downloads.ts                                                     | 151 +++++++++++++++++++++++++++++++
+ artifacts/lennox-admin/src/pages/books.tsx                                                       | 125 +++++++++++++++++++++++++-
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775986984162.txt |  81 +++++++++++++++++
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-sudo-bash-var-www-asdfunne_1775989254738.txt |  52 +++++++++++
+ install.sh                                                                                       |   6 +-
+ lib/api-client-react/src/custom-fetch.ts                                                         |   2 +-
+ lib/api-zod/src/generated/api.ts                                                                 |  15 ++++
+ lib/db/src/schema/books.ts                                                                       |   3 +
+ replit.md                                                                                        |  32 ++++++-
+ 14 files changed, 719 insertions(+), 113 deletions(-)
+ create mode 100644 artifacts/api-server/src/routes/downloads.ts
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775986984162.txt
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-sudo-bash-var-www-asdfunne_1775989254738.txt
+Scope: all 9 workspace projects
+ EACCES  EACCES: permission denied, open '/opt/asdfunnel/_tmp_14468_87a26fe23dc4b64925165ad5cc9f3b24'
+
+
+
+> @workspace/db@0.0.0 push-force /opt/asdfunnel/lib/db
+> drizzle-kit push --force --config ./drizzle.config.ts
+
+Reading config file '/opt/asdfunnel/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+[✓] Changes applied
+root@asdfunnel:/opt/asdfunnel# 
