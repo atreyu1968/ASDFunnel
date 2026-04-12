@@ -115,18 +115,23 @@ Full-stack automated publishing management admin panel for "Lennox Hale" — an 
 
 ## Production Deployment (Ubuntu)
 - `install.sh` — autoinstaller/updater for Ubuntu 22.04/24.04 (systemd + Nginx + PostgreSQL + optional Cloudflare Tunnel)
+- App directory: `/opt/asdfunnel` (migrated from `/var/www/asdfunnel`)
 - Asks for admin password during install; detects updates and preserves existing config
 - Config stored in `/etc/asdfunnel/env` (preserved across updates)
-- Nginx root must point to `dist/public` (NOT `dist/`) — Vite outputs to `dist/public/`
-- Build: only compile `@workspace/api-server` and `@workspace/lennox-admin` — skip `mockup-sandbox` (dev-only, needs PORT env var)
+- `APP_BASE_URL` auto-set to `https://ADMIN_DOMAIN` when domain configured; used for upload URLs, confirmation emails, download links
+- Nginx: root at `dist/public/` (Vite output), `index.html` explicitly no-cache, JS/CSS 30-day immutable cache, API proxy with `proxy_cache off` and `X-Forwarded-Host`
+- API responses include `Cache-Control: no-store` headers (middleware in `app.ts`)
+- Build: only compile `@workspace/api-server` and `@workspace/lennox-admin` — skip `mockup-sandbox` (dev-only)
 - Express 5 wildcard routes: use `"*path"` not `"*"` (path-to-regexp v8 requirement)
 - Nginx serves frontend static files at `/`, proxies `/api/*` to Node.js (port 5000)
 - In production, API server (`app.ts`) also serves frontend static files as fallback for SPA routing
 - Local file storage (`localFileStorage.ts`) replaces Replit GCS sidecar, files saved to `$UPLOAD_DIR`
 - Storage route selection: Replit uses GCS (`storage.ts`), production uses local files (`localStorageRoutes.ts`)
-- `APP_BASE_URL` env var used for confirmation/unsubscribe email links
+- `getBaseUrl(req)` from `lib/baseUrl.ts` for all URL generation (checks APP_BASE_URL → REPLIT_DEV_DOMAIN → headers → localhost)
+- Date serialization: `dateToISO()` in API routes, `toDateInputValue()` in frontend — handles any date format
 - Vite config defaults: `BASE_PATH=/` and `PORT=3000` when building for production
 - DB push needs DATABASE_URL exported: `export $(grep -v '^#' /etc/asdfunnel/env | xargs) && pnpm --filter @workspace/db run push`
+- Update: `sudo bash /opt/asdfunnel/install.sh` (pulls latest, rebuilds, restarts)
 - GitHub repo: https://github.com/atreyu1968/ASDFunnel
 
 ## Seed Data

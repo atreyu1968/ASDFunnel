@@ -11,10 +11,9 @@ set -eo pipefail
 #   bash /tmp/install.sh
 #
 # Uso para actualizar:
-#   sudo bash /var/www/asdfunnel/install.sh
+#   sudo bash /opt/asdfunnel/install.sh
 # ==============================================================================
 
-# Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -29,11 +28,10 @@ print_warning() { echo -e "${YELLOW}[AVISO]${NC} $1"; }
 print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 print_step()    { echo -e "\n${CYAN}${BOLD}━━━ $1 ━━━${NC}"; }
 
-# ─── Configuración ────────────────────────────────────────────────────────────
 APP_NAME="asdfunnel"
-APP_DIR="/var/www/$APP_NAME"
+APP_DIR="/opt/$APP_NAME"
 CONFIG_DIR="/etc/$APP_NAME"
-UPLOAD_DIR="/var/www/$APP_NAME/uploads"
+UPLOAD_DIR="/opt/$APP_NAME/uploads"
 APP_PORT="5000"
 APP_USER="asdfunnel"
 DB_NAME="asdfunnel"
@@ -42,7 +40,6 @@ GITHUB_REPO="https://github.com/atreyu1968/ASDFunnel.git"
 NODE_VERSION="20"
 PNPM_VERSION="9"
 
-# ─── Banner ───────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}${CYAN}"
 echo "    ╔═══════════════════════════════════════════════╗"
@@ -52,14 +49,12 @@ echo "    ║     Panel de Gestión Editorial Digital         ║"
 echo "    ╚═══════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# ─── Verificar root ──────────────────────────────────────────────────────────
 if [ "$EUID" -ne 0 ]; then
     print_error "Este script debe ejecutarse como root"
     echo "  Uso: sudo bash install.sh"
     exit 1
 fi
 
-# ─── Verificar Ubuntu ────────────────────────────────────────────────────────
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     if [ "$ID" != "ubuntu" ]; then
@@ -73,7 +68,15 @@ if [ -f /etc/os-release ]; then
     fi
 fi
 
-# ─── Detectar instalación existente ───────────────────────────────────────────
+# ─── Migrar instalación antigua de /var/www a /opt ───────────────────────────
+OLD_APP_DIR="/var/www/$APP_NAME"
+if [ -d "$OLD_APP_DIR/.git" ] && [ ! -d "$APP_DIR/.git" ]; then
+    print_warning "Detectada instalación antigua en $OLD_APP_DIR. Migrando a $APP_DIR..."
+    mv "$OLD_APP_DIR" "$APP_DIR"
+    ln -sfn "$APP_DIR" "$OLD_APP_DIR"
+    print_success "Migrado a $APP_DIR (enlace simbólico creado en $OLD_APP_DIR)"
+fi
+
 IS_UPDATE=false
 if [ -f "$CONFIG_DIR/env" ]; then
     IS_UPDATE=true
@@ -81,8 +84,7 @@ if [ -f "$CONFIG_DIR/env" ]; then
     EXISTING_DB_URL=$(grep -E '^DATABASE_URL=' "$CONFIG_DIR/env" | cut -d= -f2-)
     EXISTING_DB_PASS=$(echo "$EXISTING_DB_URL" | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
     EXISTING_SESSION_SECRET=$(grep -E '^SESSION_SECRET=' "$CONFIG_DIR/env" | cut -d= -f2-)
-else
-    print_status "Nueva instalación detectada."
+    EXISTING_ADMIN_DOMAIN=$(grep -E '^ADMIN_DOMAIN=' "$CONFIG_DIR/env" | cut -d= -f2-)
 fi
 
 # ==============================================================================
@@ -109,11 +111,12 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     postgresql \
     postgresql-contrib \
     ufw \
+    rsync \
     2>&1 | tail -5
 
 apt-mark manual nginx postgresql 2>/dev/null || true
 
-print_success "Paquetes base instalados: curl, git, nginx, postgresql, build-essential"
+print_success "Paquetes base instalados"
 
 # ==============================================================================
 # PASO 2: Instalar Node.js y pnpm
@@ -235,12 +238,12 @@ git config --global --add safe.directory "$APP_DIR" 2>/dev/null
 if [ -d "$APP_DIR/.git" ]; then
     print_status "Repositorio existente detectado. Actualizando..."
     cd "$APP_DIR"
-    sudo -u "$APP_USER" git fetch origin 2>&1 | tail -2
-    sudo -u "$APP_USER" git reset --hard origin/main 2>&1 | tail -2
+    git fetch origin 2>&1 | tail -2
+    git reset --hard origin/main 2>&1 | tail -2
     print_success "Código actualizado desde GitHub"
 else
     print_status "Clonando repositorio desde GitHub..."
-    mkdir -p /var/www
+    mkdir -p "$(dirname "$APP_DIR")"
     git clone --depth 1 "$GITHUB_REPO" "$APP_DIR" 2>&1 | tail -3
     print_success "Repositorio clonado en $APP_DIR"
 fi
@@ -297,24 +300,38 @@ if [ "$IS_UPDATE" = false ]; then
     " "$ADMIN_PASS")
     print_success "Contraseña configurada"
 
+    if [ -n "$ADMIN_DOMAIN" ]; then
+        APP_BASE_URL="https://$ADMIN_DOMAIN"
+    else
+        APP_BASE_URL="http://localhost:$APP_PORT"
+    fi
+
     cat > "$CONFIG_DIR/env" << EOF
 NODE_ENV=production
 PORT=$APP_PORT
 DATABASE_URL=$DATABASE_URL
 SESSION_SECRET=$SESSION_SECRET
 UPLOAD_DIR=$UPLOAD_DIR
-APP_BASE_URL=http://localhost:$APP_PORT
+APP_BASE_URL=$APP_BASE_URL
 ADMIN_DOMAIN=$ADMIN_DOMAIN
 ADMIN_PASSWORD_HASH=$ADMIN_PASSWORD_HASH
 SECURE_COOKIES=false
 EOF
     print_success "Configuración inicial creada"
 else
+    ADMIN_DOMAIN="$EXISTING_ADMIN_DOMAIN"
+
     grep -q "^UPLOAD_DIR=" "$CONFIG_DIR/env" || echo "UPLOAD_DIR=$UPLOAD_DIR" >> "$CONFIG_DIR/env"
-    grep -q "^APP_BASE_URL=" "$CONFIG_DIR/env" || echo "APP_BASE_URL=http://localhost:$APP_PORT" >> "$CONFIG_DIR/env"
     grep -q "^ADMIN_DOMAIN=" "$CONFIG_DIR/env" || echo "ADMIN_DOMAIN=" >> "$CONFIG_DIR/env"
     grep -q "^SECURE_COOKIES=" "$CONFIG_DIR/env" || echo "SECURE_COOKIES=false" >> "$CONFIG_DIR/env"
-    ADMIN_DOMAIN=$(grep -E '^ADMIN_DOMAIN=' "$CONFIG_DIR/env" | cut -d= -f2-)
+
+    if [ -n "$ADMIN_DOMAIN" ]; then
+        CORRECT_BASE_URL="https://$ADMIN_DOMAIN"
+    else
+        CORRECT_BASE_URL="http://localhost:$APP_PORT"
+    fi
+    sed -i '/^APP_BASE_URL=/d' "$CONFIG_DIR/env"
+    echo "APP_BASE_URL=$CORRECT_BASE_URL" >> "$CONFIG_DIR/env"
 
     if ! grep -q "^ADMIN_PASSWORD_HASH=" "$CONFIG_DIR/env"; then
         echo ""
@@ -347,6 +364,7 @@ else
     fi
 
     print_status "Configuración existente preservada y actualizada"
+    print_status "APP_BASE_URL configurado: $CORRECT_BASE_URL"
 fi
 
 chmod 755 "$CONFIG_DIR"
@@ -397,7 +415,8 @@ print_success "Aplicación compilada correctamente"
 # ==============================================================================
 print_step "8/8 Configurando servicios del sistema"
 
-# ─── Servicio systemd ────────────────────────────────────────────────────────
+FRONTEND_DIR="$APP_DIR/artifacts/lennox-admin/dist/public"
+
 print_status "Creando servicio systemd..."
 
 cat > "/etc/systemd/system/$APP_NAME.service" << EOF
@@ -427,28 +446,9 @@ systemctl daemon-reload
 systemctl enable "$APP_NAME" 2>/dev/null
 print_success "Servicio systemd '$APP_NAME' configurado"
 
-# ─── Nginx ───────────────────────────────────────────────────────────────────
 print_status "Configurando Nginx como proxy reverso multi-dominio..."
 
-FRONTEND_DIR="$APP_DIR/artifacts/lennox-admin/dist/public"
-
-PROXY_BLOCK='
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection '"'"'upgrade'"'"';
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_read_timeout 120s;
-'
-
 cat > "/etc/nginx/sites-available/$APP_NAME" << NGINX
-# ──────────────────────────────────────────────────────────────────────────────
-# Servidor principal: Panel Admin + API
-# Dominio admin: ${ADMIN_DOMAIN:-"(por IP)"}
-# Todo dominio NO reconocido como autor → panel admin
-# ──────────────────────────────────────────────────────────────────────────────
 server {
     listen 80 default_server;
     server_name _;
@@ -458,7 +458,6 @@ server {
     root $FRONTEND_DIR;
     index index.html;
 
-    # API proxy → Node.js backend
     location /api/ {
         proxy_pass http://127.0.0.1:$APP_PORT;
         proxy_http_version 1.1;
@@ -468,28 +467,28 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
         proxy_read_timeout 120s;
+        proxy_cache off;
     }
 
-    # Frontend SPA (panel admin)
     location / {
         try_files \$uri \$uri/ /index.html;
     }
 
-    # Cache de assets estáticos (30 días)
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        expires -1;
+    }
+
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Dominios de autores → Landing pages públicas
-# Cualquier dominio que NO sea el del admin se envía a Node.js,
-# que detecta el dominio del autor via el header Host y sirve la landing.
-# Para añadir un dominio de autor: solo apunta su DNS a esta IP.
-# ──────────────────────────────────────────────────────────────────────────────
-# NOTA: Cuando configures dominios de autores, añade un bloque server aquí:
+# Para añadir un dominio de autor:
+#   sudo bash $APP_DIR/add-author-domain.sh elizabethblack.com
 #
 # server {
 #     listen 80;
@@ -504,8 +503,6 @@ server {
 #         proxy_set_header X-Forwarded-Proto \$scheme;
 #     }
 # }
-#
-# O usa el script: sudo bash $APP_DIR/add-author-domain.sh elizabethblack.com
 NGINX
 
 ln -sf "/etc/nginx/sites-available/$APP_NAME" /etc/nginx/sites-enabled/
@@ -521,7 +518,6 @@ systemctl enable nginx 2>/dev/null
 systemctl restart nginx
 print_success "Nginx configurado y activo"
 
-# ─── Firewall (UFW) ─────────────────────────────────────────────────────────
 if command -v ufw &>/dev/null; then
     print_status "Configurando firewall (UFW)..."
     ufw allow 22/tcp   2>/dev/null || true
@@ -531,7 +527,6 @@ if command -v ufw &>/dev/null; then
     print_success "Firewall configurado (puertos 22, 80, 443 abiertos)"
 fi
 
-# ─── Iniciar aplicación ─────────────────────────────────────────────────────
 print_status "Iniciando ASD Funnel..."
 systemctl restart "$APP_NAME"
 sleep 4
@@ -550,47 +545,45 @@ fi
 # ==============================================================================
 # CLOUDFLARE TUNNEL (Opcional)
 # ==============================================================================
-echo ""
-echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║             CLOUDFLARE TUNNEL (Opcional)                  ║${NC}"
-echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════╣${NC}"
-echo -e "${YELLOW}║  Si deseas exponer la app a Internet con HTTPS gratuito  ║${NC}"
-echo -e "${YELLOW}║  mediante Cloudflare Tunnel, introduce el token aquí.    ║${NC}"
-echo -e "${YELLOW}║  Si solo necesitas acceso en red local, presiona Enter.  ║${NC}"
-echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════╝${NC}"
-echo ""
-read -p "  Token de Cloudflare Tunnel (Enter para omitir): " CF_TOKEN
-
-if [ -n "$CF_TOKEN" ]; then
-    print_status "Descargando e instalando Cloudflare Tunnel..."
-    curl -L -o /tmp/cloudflared.deb \
-        https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb 2>/dev/null
-    dpkg -i /tmp/cloudflared.deb 2>/dev/null
-    rm -f /tmp/cloudflared.deb
-
-    cloudflared service install "$CF_TOKEN" 2>/dev/null
-    systemctl enable cloudflared 2>/dev/null
-    systemctl start cloudflared
-
-    sed -i 's/SECURE_COOKIES=false/SECURE_COOKIES=true/' "$CONFIG_DIR/env"
-    systemctl restart "$APP_NAME"
-
-    if systemctl is-active --quiet cloudflared; then
-        print_success "Cloudflare Tunnel activo (HTTPS habilitado, cookies seguras activadas)"
-    else
-        print_warning "Cloudflare Tunnel instalado pero no activo. Revisa: systemctl status cloudflared"
-    fi
-
+if [ "$IS_UPDATE" = false ]; then
     echo ""
-    echo -e "  ${YELLOW}IMPORTANTE:${NC} Actualiza APP_BASE_URL con tu dominio:"
-    echo "    sudo sed -i 's|APP_BASE_URL=.*|APP_BASE_URL=https://tudominio.com|' $CONFIG_DIR/env"
-    echo "    sudo systemctl restart $APP_NAME"
+    echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║             CLOUDFLARE TUNNEL (Opcional)                  ║${NC}"
+    echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${YELLOW}║  Si deseas exponer la app a Internet con HTTPS gratuito  ║${NC}"
+    echo -e "${YELLOW}║  mediante Cloudflare Tunnel, introduce el token aquí.    ║${NC}"
+    echo -e "${YELLOW}║  Si solo necesitas acceso en red local, presiona Enter.  ║${NC}"
+    echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    read -p "  Token de Cloudflare Tunnel (Enter para omitir): " CF_TOKEN
+
+    if [ -n "$CF_TOKEN" ]; then
+        print_status "Descargando e instalando Cloudflare Tunnel..."
+        curl -L -o /tmp/cloudflared.deb \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb 2>/dev/null
+        dpkg -i /tmp/cloudflared.deb 2>/dev/null
+        rm -f /tmp/cloudflared.deb
+
+        cloudflared service install "$CF_TOKEN" 2>/dev/null
+        systemctl enable cloudflared 2>/dev/null
+        systemctl start cloudflared
+
+        sed -i 's/SECURE_COOKIES=false/SECURE_COOKIES=true/' "$CONFIG_DIR/env"
+        systemctl restart "$APP_NAME"
+
+        if systemctl is-active --quiet cloudflared; then
+            print_success "Cloudflare Tunnel activo (HTTPS habilitado, cookies seguras activadas)"
+        else
+            print_warning "Cloudflare Tunnel instalado pero no activo. Revisa: systemctl status cloudflared"
+        fi
+    fi
 fi
 
 # ==============================================================================
 # RESUMEN FINAL
 # ==============================================================================
 SERVER_IP=$(hostname -I | awk '{print $1}')
+FINAL_BASE_URL=$(grep -E '^APP_BASE_URL=' "$CONFIG_DIR/env" | cut -d= -f2-)
 echo ""
 echo -e "${GREEN}${BOLD}"
 echo "╔═══════════════════════════════════════════════════════════╗"
@@ -598,7 +591,7 @@ echo "║           INSTALACIÓN COMPLETADA CON ÉXITO                ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 if [ -n "$ADMIN_DOMAIN" ]; then
-    echo -e "  ${BOLD}Panel admin:${NC}       http://$ADMIN_DOMAIN"
+    echo -e "  ${BOLD}Panel admin:${NC}       https://$ADMIN_DOMAIN"
 else
     echo -e "  ${BOLD}Panel admin:${NC}       http://$SERVER_IP"
 fi
@@ -609,13 +602,14 @@ echo "    Configuración:  $CONFIG_DIR/env"
 echo "    Uploads:        $UPLOAD_DIR"
 echo "    Base de datos:  PostgreSQL → $DB_NAME"
 echo "    Dominio admin:  ${ADMIN_DOMAIN:-"(acceso por IP)"}"
+echo "    APP_BASE_URL:   $FINAL_BASE_URL"
 echo "    Puerto API:     $APP_PORT (detrás de Nginx)"
 echo ""
 echo -e "  ${BOLD}Servicios activos:${NC}"
 echo "    ● asdfunnel     (aplicación Node.js)"
 echo "    ● nginx         (proxy reverso, puerto 80)"
 echo "    ● postgresql    (base de datos)"
-if [ -n "$CF_TOKEN" ]; then
+if systemctl is-active --quiet cloudflared 2>/dev/null; then
     echo "    ● cloudflared   (túnel HTTPS)"
 fi
 echo ""
