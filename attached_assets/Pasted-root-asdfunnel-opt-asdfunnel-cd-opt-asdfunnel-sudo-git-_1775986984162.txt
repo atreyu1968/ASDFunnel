@@ -1,0 +1,81 @@
+root@asdfunnel:/opt/asdfunnel# cd /opt/asdfunnel
+sudo git pull origin main
+pnpm --filter @workspace/api-server run build
+pnpm --filter @workspace/lennox-admin run build
+sudo systemctl restart asdfunnel
+sudo systemctl status asdfunnel --no-pager | head -10
+remote: Enumerating objects: 51, done.
+remote: Counting objects: 100% (51/51), done.
+remote: Compressing objects: 100% (12/12), done.
+remote: Total 36 (delta 22), reused 36 (delta 22), pack-reused 0 (from 0)
+Unpacking objects: 100% (36/36), 11.83 KiB | 192.00 KiB/s, done.
+From https://github.com/atreyu1968/ASDFunnel
+ * branch            main       -> FETCH_HEAD
+   696c108..4ae3fc6  main       -> origin/main
+Updating 696c108..4ae3fc6
+Fast-forward
+ artifacts/api-server/src/app.ts                                                                  |  12 ++++-
+ artifacts/api-server/src/middleware/auth.ts                                                      |  32 +++++++++++++
+ artifacts/api-server/src/routes/auth.ts                                                          |  86 +++++++++++++++++++++++++++++++++++
+ artifacts/lennox-admin/src/App.tsx                                                               |  28 +++++++++++-
+ artifacts/lennox-admin/src/components/layout/main-layout.tsx                                     |  17 +++++++
+ artifacts/lennox-admin/src/pages/login.tsx                                                       |  92 +++++++++++++++++++++++++++++++++++++
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-Compilar-_1775986097833.txt | 125 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775986018885.txt |  64 ++++++++++++++++++++++++++
+ attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-journalctl-u-asdfunnel-n-3_1775986495900.txt |  32 +++++++++++++
+ change-password.sh                                                                               |  57 +++++++++++++++++++++++
+ install.sh                                                                                       |  69 +++++++++++++++++++++++++++-
+ 11 files changed, 609 insertions(+), 5 deletions(-)
+ create mode 100644 artifacts/api-server/src/middleware/auth.ts
+ create mode 100644 artifacts/api-server/src/routes/auth.ts
+ create mode 100644 artifacts/lennox-admin/src/pages/login.tsx
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-Compilar-_1775986097833.txt
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-cd-opt-asdfunnel-sudo-git-_1775986018885.txt
+ create mode 100644 attached_assets/Pasted-root-asdfunnel-opt-asdfunnel-journalctl-u-asdfunnel-n-3_1775986495900.txt
+ create mode 100755 change-password.sh
+
+> @workspace/api-server@0.0.0 build /opt/asdfunnel/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       4.1mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   6.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 733ms
+
+> @workspace/lennox-admin@0.0.0 build /opt/asdfunnel/artifacts/lennox-admin
+> vite build --config vite.config.ts
+
+vite v7.3.1 building client environment for production...
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/progress.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/select.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+✓ 2687 modules transformed.
+dist/public/index.html                   0.73 kB │ gzip:   0.41 kB
+dist/public/assets/index-Dk32arDK.css  106.25 kB │ gzip:  17.18 kB
+dist/public/assets/index-CACxti9v.js   685.13 kB │ gzip: 193.28 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 9.87s
+* asdfunnel.service - ASD Funnel Publishing Admin
+     Loaded: loaded (/etc/systemd/system/asdfunnel.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-04-12 09:41:30 UTC; 28ms ago
+ Invocation: 8dae18ef2de248009f51f92f69aa526e
+   Main PID: 13421 (node)
+      Tasks: 6 (limit: 18752)
+     Memory: 4M (peak: 4M)
+        CPU: 22ms
+     CGroup: /system.slice/asdfunnel.service
+             `-13421 /usr/bin/nod
