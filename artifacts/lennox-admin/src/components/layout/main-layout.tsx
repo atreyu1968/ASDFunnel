@@ -12,10 +12,18 @@ import {
   FileCode,
   Zap,
   Settings,
+  LogOut,
 } from "lucide-react";
+
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+
+  async function handleLogout() {
+    await fetch(`${API_BASE}api/auth/logout`, { method: "POST", credentials: "include" });
+    window.location.reload();
+  }
 
   const navItems = [
     { href: "/", label: "Panel de Control", icon: LayoutDashboard },
@@ -63,6 +71,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+        <div className="border-t border-border p-3">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar Sesión
+          </button>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto flex flex-col">
         <div className="container mx-auto p-8 max-w-7xl flex-1">

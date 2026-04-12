@@ -270,6 +270,33 @@ if [ "$IS_UPDATE" = false ]; then
     read -p "  Dominio del panel admin (Enter para omitir): " ADMIN_DOMAIN
     ADMIN_DOMAIN=$(echo "$ADMIN_DOMAIN" | tr -d ' ' | tr '[:upper:]' '[:lower:]')
 
+    echo ""
+    echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║          CONTRASEÑA DEL PANEL DE ADMINISTRACIÓN           ║${NC}"
+    echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════╣${NC}"
+    echo -e "${YELLOW}║  Establece una contraseña para proteger el acceso al      ║${NC}"
+    echo -e "${YELLOW}║  panel de administración de ASD Funnel.                   ║${NC}"
+    echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    while true; do
+        read -sp "  Contraseña de administración: " ADMIN_PASS
+        echo ""
+        read -sp "  Confirmar contraseña: " ADMIN_PASS2
+        echo ""
+        if [ "$ADMIN_PASS" = "$ADMIN_PASS2" ] && [ -n "$ADMIN_PASS" ]; then
+            break
+        fi
+        print_error "Las contraseñas no coinciden o están vacías. Inténtalo de nuevo."
+    done
+    ADMIN_PASSWORD_HASH=$(node -e "
+      const crypto = require('crypto');
+      const salt = crypto.randomBytes(16).toString('hex');
+      crypto.scrypt(process.argv[1], salt, 64, (err, key) => {
+        process.stdout.write(salt + ':' + key.toString('hex'));
+      });
+    " "$ADMIN_PASS")
+    print_success "Contraseña configurada"
+
     cat > "$CONFIG_DIR/env" << EOF
 NODE_ENV=production
 PORT=$APP_PORT
@@ -278,6 +305,7 @@ SESSION_SECRET=$SESSION_SECRET
 UPLOAD_DIR=$UPLOAD_DIR
 APP_BASE_URL=http://localhost:$APP_PORT
 ADMIN_DOMAIN=$ADMIN_DOMAIN
+ADMIN_PASSWORD_HASH=$ADMIN_PASSWORD_HASH
 SECURE_COOKIES=false
 EOF
     print_success "Configuración inicial creada"
@@ -287,6 +315,37 @@ else
     grep -q "^ADMIN_DOMAIN=" "$CONFIG_DIR/env" || echo "ADMIN_DOMAIN=" >> "$CONFIG_DIR/env"
     grep -q "^SECURE_COOKIES=" "$CONFIG_DIR/env" || echo "SECURE_COOKIES=false" >> "$CONFIG_DIR/env"
     ADMIN_DOMAIN=$(grep -E '^ADMIN_DOMAIN=' "$CONFIG_DIR/env" | cut -d= -f2-)
+
+    if ! grep -q "^ADMIN_PASSWORD_HASH=" "$CONFIG_DIR/env"; then
+        echo ""
+        echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${YELLOW}║          CONTRASEÑA DEL PANEL DE ADMINISTRACIÓN           ║${NC}"
+        echo -e "${YELLOW}╠═══════════════════════════════════════════════════════════╣${NC}"
+        echo -e "${YELLOW}║  No se encontró contraseña configurada. Establece una     ║${NC}"
+        echo -e "${YELLOW}║  para proteger el acceso al panel.                        ║${NC}"
+        echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+        while true; do
+            read -sp "  Contraseña de administración: " ADMIN_PASS
+            echo ""
+            read -sp "  Confirmar contraseña: " ADMIN_PASS2
+            echo ""
+            if [ "$ADMIN_PASS" = "$ADMIN_PASS2" ] && [ -n "$ADMIN_PASS" ]; then
+                break
+            fi
+            print_error "Las contraseñas no coinciden o están vacías. Inténtalo de nuevo."
+        done
+        ADMIN_PASSWORD_HASH=$(node -e "
+          const crypto = require('crypto');
+          const salt = crypto.randomBytes(16).toString('hex');
+          crypto.scrypt(process.argv[1], salt, 64, (err, key) => {
+            process.stdout.write(salt + ':' + key.toString('hex'));
+          });
+        " "$ADMIN_PASS")
+        echo "ADMIN_PASSWORD_HASH=$ADMIN_PASSWORD_HASH" >> "$CONFIG_DIR/env"
+        print_success "Contraseña configurada"
+    fi
+
     print_status "Configuración existente preservada y actualizada"
 fi
 
@@ -311,6 +370,10 @@ print_status "Instalando dependencias Node.js (pnpm install)..."
 sudo -u "$APP_USER" -E env NODE_ENV=development HOME="/home/$APP_USER" pnpm install --frozen-lockfile 2>&1 | tail -5
 print_success "Dependencias instaladas"
 
+print_status "Compilando typecheck de librerías compartidas..."
+sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm run typecheck:libs 2>&1 | tail -5
+print_success "Librerías verificadas"
+
 print_status "Compilando frontend (React + Vite)..."
 sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm --filter @workspace/lennox-admin run build 2>&1 | tail -5
 print_success "Frontend compilado"
@@ -320,7 +383,7 @@ sudo -u "$APP_USER" -E env NODE_ENV=production HOME="/home/$APP_USER" pnpm --fil
 print_success "Backend compilado"
 
 print_status "Sincronizando esquema de base de datos (Drizzle ORM)..."
-sudo -u "$APP_USER" -E env HOME="/home/$APP_USER" pnpm --filter @workspace/db run push 2>&1 | tail -5
+sudo -u "$APP_USER" -E env HOME="/home/$APP_USER" DATABASE_URL="$DATABASE_URL" pnpm --filter @workspace/db run push 2>&1 | tail -5
 print_success "Esquema de base de datos sincronizado"
 
 print_success "Aplicación compilada correctamente"
@@ -551,6 +614,10 @@ echo "    ● postgresql    (base de datos)"
 if [ -n "$CF_TOKEN" ]; then
     echo "    ● cloudflared   (túnel HTTPS)"
 fi
+echo ""
+echo -e "  ${BOLD}Seguridad:${NC}"
+echo "    El panel está protegido por contraseña."
+echo "    Cambiar contraseña:  sudo bash $APP_DIR/change-password.sh"
 echo ""
 echo -e "  ${BOLD}Comandos útiles:${NC}"
 echo "    Estado:         sudo systemctl status $APP_NAME"

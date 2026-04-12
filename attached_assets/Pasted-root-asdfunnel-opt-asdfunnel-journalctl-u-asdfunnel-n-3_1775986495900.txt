@@ -1,0 +1,32 @@
+root@asdfunnel:/opt/asdfunnel# journalctl -u asdfunnel -n 30 --no-pager
+Apr 12 09:34:26 asdfunnel node[12340]:     at app2.<computed> [as get] (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:21066:26)
+Apr 12 09:34:26 asdfunnel node[12340]:     at file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:107393:7 {
+Apr 12 09:34:26 asdfunnel node[12340]:   originalPath: '*'
+Apr 12 09:34:26 asdfunnel node[12340]: }
+Apr 12 09:34:26 asdfunnel node[12340]: Node.js v20.20.2
+Apr 12 09:34:26 asdfunnel systemd[1]: asdfunnel.service: Main process exited, code=exited, status=1/FAILURE
+Apr 12 09:34:26 asdfunnel systemd[1]: asdfunnel.service: Failed with result 'exit-code'.
+Apr 12 09:34:26 asdfunnel systemd[1]: asdfunnel.service: Consumed 819ms CPU time, 66.7M memory peak.
+Apr 12 09:34:31 asdfunnel systemd[1]: asdfunnel.service: Scheduled restart job, restart counter is at 67.
+Apr 12 09:34:31 asdfunnel systemd[1]: Started asdfunnel.service - ASD Funnel Publishing Admin.
+Apr 12 09:34:32 asdfunnel node[12353]: file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:19934
+Apr 12 09:34:32 asdfunnel node[12353]:           throw new PathError(`Missing parameter name at index ${index}`, str);
+Apr 12 09:34:32 asdfunnel node[12353]:                 ^
+Apr 12 09:34:32 asdfunnel node[12353]: PathError [TypeError]: Missing parameter name at index 1: *; visit https://git.new/pathToRegexpError for info
+Apr 12 09:34:32 asdfunnel node[12353]:     at name (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:19934:17)
+Apr 12 09:34:32 asdfunnel node[12353]:     at parse4 (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:19948:66)
+Apr 12 09:34:32 asdfunnel node[12353]:     at pathToRegexp (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:20090:58)
+Apr 12 09:34:32 asdfunnel node[12353]:     at Object.match (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:20060:39)
+Apr 12 09:34:32 asdfunnel node[12353]:     at matcher2 (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:20262:27)
+Apr 12 09:34:32 asdfunnel node[12353]:     at new Layer (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:20269:69)
+Apr 12 09:34:32 asdfunnel node[12353]:     at Function.route (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:20694:21)
+Apr 12 09:34:32 asdfunnel node[12353]:     at Function.route (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:21003:26)
+Apr 12 09:34:32 asdfunnel node[12353]:     at app2.<computed> [as get] (file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:21066:26)
+Apr 12 09:34:32 asdfunnel node[12353]:     at file:///opt/asdfunnel/artifacts/api-server/dist/index.mjs:107393:7 {
+Apr 12 09:34:32 asdfunnel node[12353]:   originalPath: '*'
+Apr 12 09:34:32 asdfunnel node[12353]: }
+Apr 12 09:34:32 asdfunnel node[12353]: Node.js v20.20.2
+Apr 12 09:34:32 asdfunnel systemd[1]: asdfunnel.service: Main process exited, code=exited, status=1/FAILURE
+Apr 12 09:34:32 asdfunnel systemd[1]: asdfunnel.service: Failed with result 'exit-code'.
+Apr 12 09:34:32 asdfunnel systemd[1]: asdfunnel.service: Consumed 834ms CPU time, 67.3M memory peak.
+root@asdfunnel:/opt/asdfunnel# 

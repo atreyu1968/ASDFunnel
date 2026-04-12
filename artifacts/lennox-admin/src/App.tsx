@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MainLayout } from "@/components/layout/main-layout";
+import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Authors from "@/pages/authors";
 import Series from "@/pages/series";
@@ -17,6 +19,8 @@ import Automations from "@/pages/automations";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,7 +30,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function AppRouter() {
   return (
     <MainLayout>
       <Switch>
@@ -49,11 +53,31 @@ function Router() {
 }
 
 function App() {
+  const [auth, setAuth] = useState<"loading" | "yes" | "no">("loading");
+
+  useEffect(() => {
+    fetch(`${API_BASE}api/auth/check`, { credentials: "include" })
+      .then((res) => setAuth(res.ok ? "yes" : "no"))
+      .catch(() => setAuth("no"));
+  }, []);
+
+  if (auth === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground text-sm">Cargando...</p>
+      </div>
+    );
+  }
+
+  if (auth === "no") {
+    return <Login onLogin={() => setAuth("yes")} />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <AppRouter />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
