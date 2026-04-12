@@ -241,6 +241,12 @@ if [ -d "$APP_DIR/.git" ]; then
     git fetch origin 2>&1 | tail -2
     git reset --hard origin/main 2>&1 | tail -2
     print_success "Código actualizado desde GitHub"
+
+    if [ "${ASD_REEXEC:-}" != "1" ]; then
+        print_status "Re-ejecutando install.sh actualizado..."
+        export ASD_REEXEC=1
+        exec bash "$APP_DIR/install.sh"
+    fi
 else
     print_status "Clonando repositorio desde GitHub..."
     mkdir -p "$(dirname "$APP_DIR")"
